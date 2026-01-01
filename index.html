@@ -1,96 +1,295 @@
-<script>
-const ITEMS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
-const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>L2 Interlude Craft Calculator</title>
 
-const tg = window.Telegram.WebApp;
-tg.ready();
+  <!-- Telegram Mini App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-// Нормальный CSV-парсер (кавычки/запятые)
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let cell = '';
-  let inQuotes = false;
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      margin: 0;
+      padding: 16px;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 12px 0;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+    }
+    button {
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: #1e293b;
+      color: #e5e7eb;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    button:hover { background: #334155; }
+    .item {
+      background: #1e293b;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .item:hover { background: #334155; }
+    .muted { color: #94a3b8; font-size: 12px; margin-top: 6px; }
+    .error { background: #7f1d1d; }
+    .cardTitle { font-weight: 700; margin-bottom: 10px; }
+    .line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #1e293b;
+      margin-bottom: 8px;
+    }
+    .qty { color: #eab308; font-weight: 700; }
+  </style>
+</head>
 
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    const n = text[i + 1];
+<body>
+  <h1>L2 Interlude Craft Calculator</h1>
 
-    if (c === '"' && inQuotes && n === '"') { cell += '"'; i++; continue; }
-    if (c === '"') { inQuotes = !inQuotes; continue; }
+  <div class="row">
+    <input id="q" type="text" placeholder="Search item (Arcana / Аркана)" />
+    <button id="backBtn" style="display:none;">◀ Back</button>
+  </div>
 
-    if (!inQuotes && (c === ',')) { row.push(cell); cell = ''; continue; }
-    if (!inQuotes && (c === '\n')) { row.push(cell); rows.push(row); row = []; cell = ''; continue; }
-    if (c !== '\r') cell += c;
-  }
-  if (cell.length || row.length) { row.push(cell); rows.push(row); }
+  <div id="status" class="muted">Loading data…</div>
+  <div id="view"></div>
 
-  const headers = rows[0].map(h => h.trim());
-  return rows.slice(1)
-    .filter(r => r.some(x => (x ?? '').trim() !== ''))
-    .map(r => {
-      const obj = {};
-      headers.forEach((h, idx) => obj[h] = (r[idx] ?? '').trim());
-      return obj;
-    });
-}
+  <script>
+    // ====== ТВОИ CSV ССЫЛКИ (УЖЕ ВСТАВЛЕНЫ) ======
+    const ITEMS_URL =
+      'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
+    const RECIPES_URL =
+      'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
 
-async function loadCSV(url) {
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  const text = await res.text();
-  return parseCSV(text.trim() + '\n');
-}
+    // ====== Telegram init ======
+    const tg = window.Telegram?.WebApp;
+    try { tg?.ready(); } catch(e) {}
 
-let ITEMS = [];
-let RECIPES = [];
+    // ====== Robust CSV parser (supports quotes) ======
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let cell = '';
+      let inQuotes = false;
 
-function renderList(list) {
-  const root = document.getElementById('list');
-  root.innerHTML = '';
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        const n = text[i + 1];
 
-  list.slice(0, 50).forEach(it => {
-    const div = document.createElement('div');
-    div.className = 'item';
-    const grade = it.grade ? ` (${it.grade})` : '';
-    div.textContent = `${it.name_en} — ${it.name_ru}${grade}`;
-    root.appendChild(div);
-  });
-}
+        if (c === '"' && inQuotes && n === '"') { cell += '"'; i++; continue; }
+        if (c === '"') { inQuotes = !inQuotes; continue; }
 
-function applySearch() {
-  const q = (document.getElementById('q').value || '').toLowerCase().trim();
-  if (!q) return renderList(ITEMS);
+        if (!inQuotes && c === ',') { row.push(cell); cell = ''; continue; }
+        if (!inQuotes && c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; continue; }
+        if (c !== '\r') cell += c;
+      }
+      if (cell.length || row.length) { row.push(cell); rows.push(row); }
 
-  const filtered = ITEMS.filter(it =>
-    (it.name_en || '').toLowerCase().includes(q) ||
-    (it.name_ru || '').toLowerCase().includes(q)
-  );
-  renderList(filtered);
-}
+      const headers = (rows[0] || []).map(h => (h || '').trim());
+      return rows.slice(1)
+        .filter(r => r.some(x => (x ?? '').toString().trim() !== ''))
+        .map(r => {
+          const obj = {};
+          headers.forEach((h, idx) => obj[h] = (r[idx] ?? '').toString().trim());
+          return obj;
+        });
+    }
 
-async function init() {
-  try {
-    [ITEMS, RECIPES] = await Promise.all([
-      loadCSV(ITEMS_URL),
-      loadCSV(RECIPES_URL),
-    ]);
+    async function loadCSV(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status} while loading CSV`);
+      const text = await res.text();
+      return parseCSV((text || '').trim() + '\n');
+    }
 
-    console.log('ITEMS:', ITEMS);
-    console.log('RECIPES:', RECIPES);
+    // ====== App state ======
+    let ITEMS = [];
+    let RECIPES = [];
+    let itemsById = new Map();
+    let recipesByItemId = new Map();
 
-    // По умолчанию показываем всё
-    renderList(ITEMS);
+    const $q = document.getElementById('q');
+    const $view = document.getElementById('view');
+    const $status = document.getElementById('status');
+    const $back = document.getElementById('backBtn');
 
-    // Поиск EN+RU
-    document.getElementById('q').addEventListener('input', applySearch);
+    function normBool(v) {
+      return String(v || '').trim().toLowerCase() === 'true';
+    }
 
-  } catch (e) {
-    console.error(e);
-    const root = document.getElementById('list');
-    root.innerHTML = `<div class="item">Error: ${String(e.message || e)}</div>`;
-  }
-}
+    function buildIndexes() {
+      itemsById = new Map(ITEMS.map(it => [String(it.id), it]));
 
-init();
-</script>
+      recipesByItemId = new Map();
+      for (const r of RECIPES) {
+        const itemId = String(r.item_id || '').trim();
+        if (!itemId) continue;
+        if (!recipesByItemId.has(itemId)) recipesByItemId.set(itemId, []);
+        recipesByItemId.get(itemId).push({
+          item_id: itemId,
+          component_id: String(r.component_id || '').trim(),
+          qty: Number(String(r.qty || '0').trim() || 0)
+        });
+      }
+    }
+
+    // ====== UI render ======
+    function setStatus(msg) { $status.textContent = msg; }
+
+    function renderList() {
+      $back.style.display = 'none';
+      $q.style.display = '';
+      $view.innerHTML = '';
+
+      const query = ($q.value || '').trim().toLowerCase();
+      const list = query
+        ? ITEMS.filter(it =>
+            (it.name_en || '').toLowerCase().includes(query) ||
+            (it.name_ru || '').toLowerCase().includes(query)
+          )
+        : ITEMS;
+
+      setStatus(`Items: ${list.length}`);
+
+      // Render (limit to 80 for performance)
+      list.slice(0, 80).forEach(it => {
+        const div = document.createElement('div');
+        div.className = 'item';
+
+        const grade = it.grade ? ` (${it.grade})` : '';
+        div.textContent = `${it.name_en} — ${it.name_ru}${grade}`;
+
+        div.onclick = () => renderItem(it.id);
+        $view.appendChild(div);
+      });
+
+      if (list.length > 80) {
+        const more = document.createElement('div');
+        more.className = 'muted';
+        more.textContent = `Showing first 80 results. Narrow your search to see more.`;
+        $view.appendChild(more);
+      }
+    }
+
+    function renderItem(itemId) {
+      const it = itemsById.get(String(itemId));
+      if (!it) return;
+
+      $q.style.display = 'none';
+      $back.style.display = '';
+      $view.innerHTML = '';
+
+      $back.onclick = () => {
+        $q.style.display = '';
+        renderList();
+      };
+
+      const title = document.createElement('div');
+      title.className = 'cardTitle';
+      const grade = it.grade ? ` (${it.grade})` : '';
+      title.textContent = `${it.name_en} — ${it.name_ru}${grade}`;
+      $view.appendChild(title);
+
+      const comps = recipesByItemId.get(String(itemId)) || [];
+      if (!comps.length) {
+        const none = document.createElement('div');
+        none.className = 'muted';
+        none.textContent = 'No recipe rows for this item yet.';
+        $view.appendChild(none);
+        setStatus('Ready');
+        return;
+      }
+
+      setStatus(`Components: ${comps.length}`);
+
+      for (const c of comps) {
+        const comp = itemsById.get(String(c.component_id));
+        const line = document.createElement('div');
+        line.className = 'line';
+
+        const left = document.createElement('div');
+        const right = document.createElement('div');
+        right.className = 'qty';
+        right.textContent = `x${c.qty}`;
+
+        if (comp) {
+          left.textContent = `${comp.name_en} — ${comp.name_ru}`;
+        } else {
+          left.textContent = `Unknown item id: ${c.component_id}`;
+          line.classList.add('error');
+        }
+
+        line.appendChild(left);
+        line.appendChild(right);
+        $view.appendChild(line);
+      }
+    }
+
+    // ====== Init ======
+    async function init() {
+      try {
+        setStatus('Loading Items…');
+        ITEMS = await loadCSV(ITEMS_URL);
+
+        setStatus('Loading Recipes…');
+        RECIPES = await loadCSV(RECIPES_URL);
+
+        // Normalize / keep only useful rows
+        ITEMS = ITEMS
+          .filter(it => String(it.id || '').trim() !== '')
+          .map(it => ({
+            id: String(it.id).trim(),
+            name_en: it.name_en || '',
+            name_ru: it.name_ru || '',
+            category: it.category || '',
+            grade: it.grade || '',
+            is_base: normBool(it.is_base)
+          }));
+
+        buildIndexes();
+
+        console.log('ITEMS:', ITEMS);
+        console.log('RECIPES:', RECIPES);
+
+        setStatus('Ready');
+        renderList();
+
+        $q.addEventListener('input', renderList);
+
+      } catch (e) {
+        console.error(e);
+        setStatus('Error loading data. Check Console.');
+        $view.innerHTML = `<div class="item error">Error: ${String(e.message || e)}</div>`;
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
