@@ -1,89 +1,96 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>L2 Interlude Craft Calculator</title>
-
-  <!-- Telegram Mini App SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
-      margin: 0;
-      padding: 16px;
-    }
-    h1 {
-      font-size: 18px;
-      margin-bottom: 12px;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      margin-bottom: 12px;
-      border-radius: 6px;
-      border: none;
-    }
-    .item {
-      background: #1e293b;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      cursor: pointer;
-    }
-    .item:hover {
-      background: #334155;
-    }
-  </style>
-</head>
-
-<body>
-  <h1>L2 Interlude Craft Calculator</h1>
-
-  <input type="text" placeholder="Search item (Arcana / Аркана)">
-
-  <div class="item">
-    Arcana Mace — Аркана Мейс (S)
-  </div>
-
-  <script>
-/* ===== ВСТАВЬ СЮДА ССЫЛКИ CSV ===== */
+<script>
 const ITEMS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
 const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
 
-/* ===== ЗАГРУЗКА CSV ===== */
-async function loadCSV(url) {
-  const res = await fetch(url);
-  const text = await res.text();
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',');
+const tg = window.Telegram.WebApp;
+tg.ready();
 
-  return lines.slice(1).map(line => {
-    const values = line.split(',');
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = values[i]);
-    return obj;
+// Нормальный CSV-парсер (кавычки/запятые)
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const n = text[i + 1];
+
+    if (c === '"' && inQuotes && n === '"') { cell += '"'; i++; continue; }
+    if (c === '"') { inQuotes = !inQuotes; continue; }
+
+    if (!inQuotes && (c === ',')) { row.push(cell); cell = ''; continue; }
+    if (!inQuotes && (c === '\n')) { row.push(cell); rows.push(row); row = []; cell = ''; continue; }
+    if (c !== '\r') cell += c;
+  }
+  if (cell.length || row.length) { row.push(cell); rows.push(row); }
+
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1)
+    .filter(r => r.some(x => (x ?? '').trim() !== ''))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => obj[h] = (r[idx] ?? '').trim());
+      return obj;
+    });
+}
+
+async function loadCSV(url) {
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+  const text = await res.text();
+  return parseCSV(text.trim() + '\n');
+}
+
+let ITEMS = [];
+let RECIPES = [];
+
+function renderList(list) {
+  const root = document.getElementById('list');
+  root.innerHTML = '';
+
+  list.slice(0, 50).forEach(it => {
+    const div = document.createElement('div');
+    div.className = 'item';
+    const grade = it.grade ? ` (${it.grade})` : '';
+    div.textContent = `${it.name_en} — ${it.name_ru}${grade}`;
+    root.appendChild(div);
   });
 }
 
-/* ===== ЗАГРУЗКА ДАННЫХ ===== */
-async function loadData() {
-  const items = await loadCSV(ITEMS_URL);
-  const recipes = await loadCSV(RECIPES_URL);
+function applySearch() {
+  const q = (document.getElementById('q').value || '').toLowerCase().trim();
+  if (!q) return renderList(ITEMS);
 
-  console.log('ITEMS:', items);
-  console.log('RECIPES:', recipes);
+  const filtered = ITEMS.filter(it =>
+    (it.name_en || '').toLowerCase().includes(q) ||
+    (it.name_ru || '').toLowerCase().includes(q)
+  );
+  renderList(filtered);
 }
 
-loadData();
+async function init() {
+  try {
+    [ITEMS, RECIPES] = await Promise.all([
+      loadCSV(ITEMS_URL),
+      loadCSV(RECIPES_URL),
+    ]);
 
-/* ===== TELEGRAM ===== */
-const tg = window.Telegram.WebApp;
-tg.ready();
+    console.log('ITEMS:', ITEMS);
+    console.log('RECIPES:', RECIPES);
+
+    // По умолчанию показываем всё
+    renderList(ITEMS);
+
+    // Поиск EN+RU
+    document.getElementById('q').addEventListener('input', applySearch);
+
+  } catch (e) {
+    console.error(e);
+    const root = document.getElementById('list');
+    root.innerHTML = `<div class="item">Error: ${String(e.message || e)}</div>`;
+  }
+}
+
+init();
 </script>
-
-</body>
-</html>
