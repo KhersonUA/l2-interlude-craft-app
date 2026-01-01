@@ -50,8 +50,40 @@
   </div>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-  </script>
+/* ===== ВСТАВЬ СЮДА ССЫЛКИ CSV ===== */
+const ITEMS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
+const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
+
+/* ===== ЗАГРУЗКА CSV ===== */
+async function loadCSV(url) {
+  const res = await fetch(url);
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',');
+
+  return lines.slice(1).map(line => {
+    const values = line.split(',');
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = values[i]);
+    return obj;
+  });
+}
+
+/* ===== ЗАГРУЗКА ДАННЫХ ===== */
+async function loadData() {
+  const items = await loadCSV(ITEMS_URL);
+  const recipes = await loadCSV(RECIPES_URL);
+
+  console.log('ITEMS:', items);
+  console.log('RECIPES:', recipes);
+}
+
+loadData();
+
+/* ===== TELEGRAM ===== */
+const tg = window.Telegram.WebApp;
+tg.ready();
+</script>
+
 </body>
 </html>
