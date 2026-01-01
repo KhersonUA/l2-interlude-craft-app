@@ -20,12 +20,14 @@
       font-size: 18px;
       margin: 0 0 12px 0;
     }
+
     .row {
       display: flex;
       gap: 8px;
       align-items: center;
       margin-bottom: 12px;
     }
+
     input {
       width: 100%;
       padding: 10px;
@@ -34,6 +36,7 @@
       border: none;
       outline: none;
     }
+
     button {
       padding: 10px 12px;
       border-radius: 6px;
@@ -45,6 +48,12 @@
       white-space: nowrap;
     }
     button:hover { background: #334155; }
+
+    .tabActive{
+      background:#334155 !important;
+      border: 1px solid #64748b;
+    }
+
     .item {
       background: #1e293b;
       padding: 10px;
@@ -53,9 +62,11 @@
       cursor: pointer;
     }
     .item:hover { background: #334155; }
+
     .muted { color: #94a3b8; font-size: 12px; margin: 8px 0; }
     .error { background: #7f1d1d; }
     .cardTitle { font-weight: 700; margin-bottom: 10px; }
+
     .line {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -67,12 +78,14 @@
       margin-bottom: 8px;
     }
     .qty { color: #eab308; font-weight: 700; }
+
     .tree {
       margin-left: 14px;
       padding-left: 10px;
       border-left: 1px solid #334155;
       margin-bottom: 10px;
     }
+
     .miniBtn{
       padding: 6px 10px;
       font-size: 12px;
@@ -89,8 +102,13 @@
 <body>
   <h1>L2 Interlude Craft Calculator</h1>
 
+  <!-- Tabs (пока одна вкладка) -->
+  <div class="row" style="margin-bottom:8px;">
+    <button id="tabWeapons">Weapons</button>
+  </div>
+
   <div class="row">
-    <input id="q" type="text" placeholder="Search item (Arcana / Аркана)" />
+    <input id="q" type="text" placeholder="Search weapon (Arcana / Аркана)" />
     <button id="backBtn" style="display:none;">◀ Back</button>
   </div>
 
@@ -155,6 +173,10 @@
     const $view = document.getElementById('view');
     const $status = document.getElementById('status');
     const $back = document.getElementById('backBtn');
+    const $tabWeapons = document.getElementById('tabWeapons');
+
+    // активная вкладка (пока одна)
+    let activeTab = 'weapon';
 
     function normBool(v) {
       return String(v || '').trim().toLowerCase() === 'true';
@@ -178,6 +200,17 @@
 
     function setStatus(msg) { $status.textContent = msg; }
 
+    function setActiveTab(tab){
+      activeTab = tab;
+      $tabWeapons.classList.toggle('tabActive', activeTab === 'weapon');
+
+      // вернуться в список
+      $q.value = '';
+      $q.style.display = '';
+      $back.style.display = 'none';
+      renderList();
+    }
+
     // ====== LIST VIEW ======
     function renderList() {
       $back.style.display = 'none';
@@ -185,16 +218,23 @@
       $view.innerHTML = '';
 
       const query = ($q.value || '').trim().toLowerCase();
+
+      // Вкладка weapons: показываем только weapon и НЕ base
+      const baseList = ITEMS.filter(it =>
+        (it.category || '').toLowerCase() === 'weapon' &&
+        !it.is_base
+      );
+
       const list = query
-        ? ITEMS.filter(it =>
+        ? baseList.filter(it =>
             (it.name_en || '').toLowerCase().includes(query) ||
             (it.name_ru || '').toLowerCase().includes(query)
           )
-        : ITEMS;
+        : baseList;
 
-      setStatus(`Items: ${list.length}`);
+      setStatus(`Weapons: ${list.length}`);
 
-      list.slice(0, 80).forEach(it => {
+      list.slice(0, 120).forEach(it => {
         const div = document.createElement('div');
         div.className = 'item';
         const grade = it.grade ? ` (${it.grade})` : '';
@@ -203,10 +243,10 @@
         $view.appendChild(div);
       });
 
-      if (list.length > 80) {
+      if (list.length > 120) {
         const more = document.createElement('div');
         more.className = 'muted';
-        more.textContent = `Showing first 80 results. Narrow your search to see more.`;
+        more.textContent = `Showing first 120 results. Narrow your search to see more.`;
         $view.appendChild(more);
       }
     }
@@ -240,13 +280,13 @@
         line.classList.add('error');
       }
 
+      // button cell
+      const btnCell = document.createElement('div');
+
       // qty
       const right = document.createElement('div');
       right.className = 'qty';
       right.textContent = `x${qty}`;
-
-      // button cell
-      const btnCell = document.createElement('div');
 
       // child container for expanded recipe
       const children = document.createElement('div');
@@ -287,7 +327,6 @@
 
         btnCell.appendChild(btn);
       } else {
-        // base material marker
         const base = document.createElement('div');
         base.className = 'muted';
         base.textContent = 'base';
@@ -350,38 +389,4 @@
         setStatus('Loading Items…');
         ITEMS = await loadCSV(ITEMS_URL);
 
-        setStatus('Loading Recipes…');
-        RECIPES = await loadCSV(RECIPES_URL);
-
-        ITEMS = ITEMS
-          .filter(it => String(it.id || '').trim() !== '')
-          .map(it => ({
-            id: String(it.id).trim(),
-            name_en: it.name_en || '',
-            name_ru: it.name_ru || '',
-            category: it.category || '',
-            grade: it.grade || '',
-            is_base: normBool(it.is_base)
-          }));
-
-        buildIndexes();
-
-        console.log('ITEMS:', ITEMS);
-        console.log('RECIPES:', RECIPES);
-
-        setStatus('Ready');
-        renderList();
-
-        $q.addEventListener('input', renderList);
-
-      } catch (e) {
-        console.error(e);
-        setStatus('Error loading data. Check Console.');
-        $view.innerHTML = `<div class="item error">Error: ${String(e.message || e)}</div>`;
-      }
-    }
-
-    init();
-  </script>
-</body>
-</html>
+        set
