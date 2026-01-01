@@ -53,19 +53,36 @@
       cursor: pointer;
     }
     .item:hover { background: #334155; }
-    .muted { color: #94a3b8; font-size: 12px; margin-top: 6px; }
+    .muted { color: #94a3b8; font-size: 12px; margin: 8px 0; }
     .error { background: #7f1d1d; }
     .cardTitle { font-weight: 700; margin-bottom: 10px; }
     .line {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
       gap: 10px;
+      align-items: center;
       padding: 8px 10px;
       border-radius: 6px;
       background: #1e293b;
       margin-bottom: 8px;
     }
     .qty { color: #eab308; font-weight: 700; }
+    .tree {
+      margin-left: 14px;
+      padding-left: 10px;
+      border-left: 1px solid #334155;
+      margin-bottom: 10px;
+    }
+    .miniBtn{
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+      background: #0b1222;
+      border: 1px solid #334155;
+    }
+    .miniBtn:hover{
+      background: #111b33;
+    }
   </style>
 </head>
 
@@ -81,7 +98,7 @@
   <div id="view"></div>
 
   <script>
-    // ====== ТВОИ CSV ССЫЛКИ (УЖЕ ВСТАВЛЕНЫ) ======
+    // ====== ТВОИ CSV ССЫЛКИ ======
     const ITEMS_URL =
       'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
     const RECIPES_URL =
@@ -91,7 +108,7 @@
     const tg = window.Telegram?.WebApp;
     try { tg?.ready(); } catch(e) {}
 
-    // ====== Robust CSV parser (supports quotes) ======
+    // ====== CSV parser (supports quotes) ======
     function parseCSV(text) {
       const rows = [];
       let row = [];
@@ -159,9 +176,9 @@
       }
     }
 
-    // ====== UI render ======
     function setStatus(msg) { $status.textContent = msg; }
 
+    // ====== LIST VIEW ======
     function renderList() {
       $back.style.display = 'none';
       $q.style.display = '';
@@ -177,14 +194,11 @@
 
       setStatus(`Items: ${list.length}`);
 
-      // Render (limit to 80 for performance)
       list.slice(0, 80).forEach(it => {
         const div = document.createElement('div');
         div.className = 'item';
-
         const grade = it.grade ? ` (${it.grade})` : '';
         div.textContent = `${it.name_en} — ${it.name_ru}${grade}`;
-
         div.onclick = () => renderItem(it.id);
         $view.appendChild(div);
       });
@@ -197,6 +211,100 @@
       }
     }
 
+    // ====== TREE HELPERS ======
+    function hasRecipe(itemId) {
+      const arr = recipesByItemId.get(String(itemId));
+      return !!(arr && arr.length);
+    }
+
+    function formatItemName(it) {
+      if (!it) return 'Unknown';
+      const grade = it.grade ? ` (${it.grade})` : '';
+      return `${it.name_en} — ${it.name_ru}${grade}`;
+    }
+
+    // Create one component row with Expand/Collapse and a child container
+    function createComponentNode(componentId, qty, level) {
+      const comp = itemsById.get(String(componentId));
+
+      const wrapper = document.createElement('div');
+
+      const line = document.createElement('div');
+      line.className = 'line';
+
+      // name
+      const left = document.createElement('div');
+      if (comp) left.textContent = formatItemName(comp);
+      else {
+        left.textContent = `Unknown item id: ${componentId}`;
+        line.classList.add('error');
+      }
+
+      // qty
+      const right = document.createElement('div');
+      right.className = 'qty';
+      right.textContent = `x${qty}`;
+
+      // button cell
+      const btnCell = document.createElement('div');
+
+      // child container for expanded recipe
+      const children = document.createElement('div');
+      children.className = 'tree';
+      children.style.display = 'none';
+
+      // Expand button only if this component has its own recipe
+      if (comp && hasRecipe(comp.id)) {
+        const btn = document.createElement('button');
+        btn.className = 'miniBtn';
+        btn.textContent = '▶ Expand';
+
+        let expanded = false;
+
+        btn.onclick = () => {
+          if (!expanded) {
+            // expand
+            btn.textContent = '▼ Collapse';
+            children.style.display = '';
+            children.innerHTML = '';
+
+            // multiply quantities: parent qty * child qty
+            const sub = recipesByItemId.get(String(comp.id)) || [];
+            sub.forEach(r => {
+              const childQty = (Number(qty) || 0) * (Number(r.qty) || 0);
+              children.appendChild(createComponentNode(r.component_id, childQty, level + 1));
+            });
+
+            expanded = true;
+          } else {
+            // collapse
+            btn.textContent = '▶ Expand';
+            children.style.display = 'none';
+            children.innerHTML = '';
+            expanded = false;
+          }
+        };
+
+        btnCell.appendChild(btn);
+      } else {
+        // base material marker
+        const base = document.createElement('div');
+        base.className = 'muted';
+        base.textContent = 'base';
+        btnCell.appendChild(base);
+      }
+
+      line.appendChild(left);
+      line.appendChild(btnCell);
+      line.appendChild(right);
+
+      wrapper.appendChild(line);
+      wrapper.appendChild(children);
+
+      return wrapper;
+    }
+
+    // ====== ITEM VIEW ======
     function renderItem(itemId) {
       const it = itemsById.get(String(itemId));
       if (!it) return;
@@ -212,43 +320,28 @@
 
       const title = document.createElement('div');
       title.className = 'cardTitle';
-      const grade = it.grade ? ` (${it.grade})` : '';
-      title.textContent = `${it.name_en} — ${it.name_ru}${grade}`;
+      title.textContent = formatItemName(it);
       $view.appendChild(title);
 
       const comps = recipesByItemId.get(String(itemId)) || [];
+      setStatus(`Components: ${comps.length}`);
+
       if (!comps.length) {
         const none = document.createElement('div');
         none.className = 'muted';
         none.textContent = 'No recipe rows for this item yet.';
         $view.appendChild(none);
-        setStatus('Ready');
         return;
       }
 
-      setStatus(`Components: ${comps.length}`);
+      comps.forEach(r => {
+        $view.appendChild(createComponentNode(r.component_id, r.qty, 0));
+      });
 
-      for (const c of comps) {
-        const comp = itemsById.get(String(c.component_id));
-        const line = document.createElement('div');
-        line.className = 'line';
-
-        const left = document.createElement('div');
-        const right = document.createElement('div');
-        right.className = 'qty';
-        right.textContent = `x${c.qty}`;
-
-        if (comp) {
-          left.textContent = `${comp.name_en} — ${comp.name_ru}`;
-        } else {
-          left.textContent = `Unknown item id: ${c.component_id}`;
-          line.classList.add('error');
-        }
-
-        line.appendChild(left);
-        line.appendChild(right);
-        $view.appendChild(line);
-      }
+      const hint = document.createElement('div');
+      hint.className = 'muted';
+      hint.textContent = 'Tip: Click ▶ Expand to раскрыть крафт компонента (qty будет умножаться).';
+      $view.appendChild(hint);
     }
 
     // ====== Init ======
@@ -260,7 +353,6 @@
         setStatus('Loading Recipes…');
         RECIPES = await loadCSV(RECIPES_URL);
 
-        // Normalize / keep only useful rows
         ITEMS = ITEMS
           .filter(it => String(it.id || '').trim() !== '')
           .map(it => ({
