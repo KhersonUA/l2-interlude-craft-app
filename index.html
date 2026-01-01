@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>L2 Interlude Craft Calculator</title>
+
+  <!-- Telegram Mini App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      margin: 0;
+      padding: 16px;
+    }
+    h1 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border: none;
+    }
+    .item {
+      background: #1e293b;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .item:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>L2 Interlude Craft Calculator</h1>
+
+  <input type="text" placeholder="Search item (Arcana / Аркана)">
+
+  <div class="item">
+    Arcana Mace — Аркана Мейс (S)
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+  </script>
+</body>
+</html>
