@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>L2 Interlude Craft Calculator</title>
 
   <!-- Telegram Mini App SDK -->
@@ -10,163 +10,180 @@
 
   <style>
     :root{
-      --bg:#0f172a;
-      --panel:#1e293b;
-      --panel2:#0b1224;
+      --bg:#0b1220;
+      --panel:#0f172a;
+      --row:#162238;
+      --row2:#1a2a44;
+      --hover:#223455;
       --text:#e5e7eb;
-      --muted:#93a4b8;
-      --accent:#fbbf24;
-      --line:#334155;
-      --danger:#7f1d1d;
+      --muted:#9ca3af;
+      --accent:#f59e0b;
+      --btn:#0b1b33;
+      --btnBorder:#2b3f64;
     }
+    *{box-sizing:border-box}
     body{
-      font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
       margin:0;
       padding:16px;
-    }
-    h1{font-size:18px;margin:0 0 10px 0;}
-
-    .tabs{display:flex;gap:8px;margin-bottom:10px;}
-    .tab{
-      padding:8px 12px;border-radius:8px;
-      border:1px solid var(--line);
-      background:var(--panel2);
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, var(--panel), var(--bg));
       color:var(--text);
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .tab{
+      background: var(--btn);
+      border:1px solid var(--btnBorder);
+      color: var(--text);
+      padding:8px 12px;
+      border-radius:8px;
       cursor:pointer;
-      font-size:13px;
-      user-select:none;
+      font-weight:600;
     }
-    .tab.active{background:var(--panel);}
-
-    input{
-      width:100%;
-      padding:10px;
-      font-size:16px;
+    .tab.active{
+      border-color:#3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,.15) inset;
+    }
+    h1{
       margin:0 0 10px 0;
+      font-size:18px;
+      font-weight:700;
+    }
+    .search{
+      width:100%;
+      padding:10px 12px;
+      font-size:16px;
       border-radius:8px;
-      border:1px solid var(--line);
-      background:#ffffff;
-      color:#111827;
-      box-sizing:border-box;
+      border:1px solid #20314f;
+      background:#0b1b33;
+      color:var(--text);
       outline:none;
+      margin-bottom:12px;
     }
-
     .meta{
-      font-size:12px;color:var(--muted);
-      margin:0 0 8px 0;
-      white-space:pre-wrap;
-    }
-    .errorBox{
-      background: var(--danger);
-      border:1px solid #ef4444;
-      padding:10px;
-      border-radius:8px;
-      white-space:pre-wrap;
-      margin:10px 0;
+      font-size:12px;
+      color:var(--muted);
+      margin:6px 0 10px;
     }
 
     .row{
-      background:var(--panel);
-      padding:10px 12px;
-      border-radius:8px;
-      margin-bottom:8px;
-      border:1px solid #23324a;
-    }
-    .row.clickable{cursor:pointer;}
-    .row.clickable:hover{background:var(--line);}
-
-    .rowline{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:12px;
+      background: var(--row);
+      border:1px solid #223455;
+      padding:10px 12px;
+      border-radius:10px;
+      margin-bottom:8px;
     }
-
+    .row:hover{ background: var(--hover); }
+    .row.clickable{ cursor:pointer; }
     .left{
       display:flex;
       align-items:center;
       gap:10px;
       min-width:0;
-      flex:1;
     }
-    .title{
-      font-size:14px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-    .tag{
-      font-size:11px;
-      color:var(--muted);
-      min-width:44px;
-      text-align:right;
-    }
-    .qty{
-      font-weight:700;
-      color:var(--accent);
-      min-width:70px;
-      text-align:right;
-    }
-
-    /* icon box (always same size) */
     .icon{
-      width:28px;height:28px;
-      border-radius:6px;
-      background:#0b1224;
-      border:1px solid #20304a;
-      flex:0 0 28px;
-      overflow:hidden;
+      width:34px;
+      height:34px;
+      border-radius:8px;
+      background:#0b1b33;
+      border:1px solid #24385e;
       display:flex;
       align-items:center;
       justify-content:center;
+      flex:0 0 auto;
+      overflow:hidden;
     }
     .icon img{
       width:100%;
       height:100%;
-      object-fit:cover;
+      object-fit:contain;
       display:block;
     }
-    .iconFallbackDot{
-      width:14px;height:14px;border-radius:50%;
-      background:#64748b;
-      display:block;
-    }
-
-    .btn{
-      padding:6px 10px;
-      border-radius:8px;
-      border:1px solid var(--line);
-      background:var(--panel2);
-      color:var(--text);
-      cursor:pointer;
-      font-size:12px;
+    .title{
+      min-width:0;
       white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-size:14px;
+      font-weight:600;
     }
-    .btn:hover{background:var(--line);}
-
-    .back{
-      display:inline-block;
-      margin:0 0 10px 0;
+    .right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:0 0 auto;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .qty{
+      color:var(--accent);
+      font-weight:800;
+      font-size:14px;
+      min-width:56px;
+      text-align:right;
+    }
+    .pill{
+      border:1px solid #2b3f64;
+      padding:3px 8px;
+      border-radius:999px;
+      background:#0b1b33;
+      color:var(--muted);
+      font-size:11px;
+    }
+    .btn{
+      background: var(--btn);
+      border:1px solid var(--btnBorder);
+      color: var(--text);
       padding:6px 10px;
       border-radius:8px;
-      border:1px solid var(--line);
-      background:var(--panel2);
-      color:var(--text);
       cursor:pointer;
-      font-size:13px;
+      font-weight:700;
+      font-size:12px;
     }
-    .indent{
-      margin-left:18px;
-      border-left:2px solid #24344f;
+    .btn:hover{ background:#102447; }
+
+    .backbar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:8px 0 8px;
+    }
+    .tip{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:8px;
+    }
+
+    /* дерево */
+    .tree{
+      margin-top:8px;
+    }
+    .node{
+      margin-bottom:8px;
+    }
+    .children{
+      margin-left:22px;
+      border-left:2px solid #223455;
       padding-left:10px;
       margin-top:8px;
     }
-    .tip{
-      margin-top:8px;
-      font-size:12px;
+    .small{
+      font-size:11px;
       color:var(--muted);
+    }
+    .error{
+      color:#fca5a5;
+      font-size:13px;
+      margin-top:8px;
+      white-space:pre-wrap;
     }
   </style>
 </head>
@@ -174,423 +191,310 @@
 <body>
   <h1>L2 Interlude Craft Calculator</h1>
 
-  <div class="tabs">
-    <button class="tab active" id="tabWeapons">Weapons</button>
+  <div class="topbar">
+    <button id="tabWeapons" class="tab active">Weapons</button>
   </div>
 
-  <input id="search" type="text" placeholder="Search weapon (Arcana / Аркана)"/>
+  <input id="search" class="search" type="text" placeholder="Search weapon (Arcana / Аркана)">
 
-  <div class="meta" id="status">Loading data...</div>
+  <div id="meta" class="meta">Loading data...</div>
+  <div id="content"></div>
 
-  <div id="viewList"></div>
-  <div id="viewDetails" style="display:none;"></div>
+  <script>
+    /* ===== ВСТАВЬ СЮДА ССЫЛКИ CSV ===== */
+    const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
+    const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
 
-<script>
-/* ==========================
-   0) CSV URLS
-   ========================== */
-const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
-const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
+    /* ===== STATE ===== */
+    let ITEMS = [];
+    let RECIPES = [];
+    let itemsById = new Map();              // id -> item
+    let recipeByItemId = new Map();         // item_id -> array of {item_id, component_id, qty}
+    let currentView = 'weaponsList';        // weaponsList | weaponTree
+    let currentWeaponId = null;
+    let expanded = new Set();               // key: `${parentId}:${childId}` or just itemId for tree expand
 
-/* ==========================
-   1) Telegram
-   ========================== */
-try{ window.Telegram?.WebApp?.ready(); } catch(e){}
+    /* ===== CSV LOADER (supports quotes) ===== */
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let cur = '';
+      let inQuotes = false;
 
-/* ==========================
-   2) DOM
-   ========================== */
-const elSearch  = document.getElementById('search');
-const elStatus  = document.getElementById('status');
-const elList    = document.getElementById('viewList');
-const elDetails = document.getElementById('viewDetails');
-const tabWeapons = document.getElementById('tabWeapons');
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        const next = text[i + 1];
 
-/* ==========================
-   3) State
-   ========================== */
-let ITEMS = [];
-let RECIPES = [];
-const itemsById = new Map();     // id -> item
-const recipeMap = new Map();     // item_id -> [{component_id, qty}]
-let currentTab = 'weapon';
-let currentItemId = null;
-const expanded = new Set();      // node keys for expand/collapse
+        if (c === '"' && inQuotes && next === '"') { cur += '"'; i++; continue; }
+        if (c === '"') { inQuotes = !inQuotes; continue; }
 
-/* ==========================
-   4) CSV PARSER (quotes-safe + BOM-safe)
-   ========================== */
-function parseCSV(text){
-  const rows = [];
-  let row = [];
-  let cell = '';
-  let inQuotes = false;
-
-  for (let i=0;i<text.length;i++){
-    const c = text[i];
-    const n = text[i+1];
-
-    if (c === '"' && inQuotes && n === '"'){ cell += '"'; i++; continue; }
-    if (c === '"'){ inQuotes = !inQuotes; continue; }
-
-    if (!inQuotes && c === ','){ row.push(cell); cell=''; continue; }
-    if (!inQuotes && (c === '\n' || c === '\r')){
-      if (c === '\r' && n === '\n') i++;
-      row.push(cell); cell='';
-      if (!(row.length===1 && row[0].trim()==='')) rows.push(row);
-      row=[];
-      continue;
+        if (!inQuotes && (c === ',')) { row.push(cur); cur = ''; continue; }
+        if (!inQuotes && (c === '\n' || c === '\r')) {
+          if (c === '\r' && next === '\n') i++;
+          row.push(cur);
+          rows.push(row);
+          row = [];
+          cur = '';
+          continue;
+        }
+        cur += c;
+      }
+      if (cur.length || row.length) { row.push(cur); rows.push(row); }
+      return rows;
     }
-    cell += c;
-  }
-  if (cell.length || row.length){ row.push(cell); rows.push(row); }
 
-  if (!rows.length) return [];
-  const headers = rows[0].map((h, idx) => {
-    let s = String(h || '').trim();
-    // remove BOM if present in first header
-    if (idx === 0) s = s.replace(/^\uFEFF/, '');
-    return s;
-  });
+    async function loadCSV(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`CSV fetch failed (${res.status}) for ${url}`);
+      const text = await res.text();
+      const table = parseCSV(text.trim());
+      if (!table.length) return [];
 
-  return rows.slice(1)
-    .filter(r => r.some(x => String(x||'').trim() !== ''))
-    .map(r => {
-      const obj = {};
-      headers.forEach((h,idx) => obj[h] = String(r[idx] ?? '').trim());
-      return obj;
-    });
-}
-
-async function loadCSV(url){
-  const bust = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
-  const res = await fetch(url + bust, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Fetch failed: ' + res.status + ' | ' + url);
-  const text = await res.text();
-  return parseCSV(text);
-}
-
-/* ==========================
-   5) Helpers
-   ========================== */
-function showError(err){
-  elStatus.textContent = 'ERROR';
-  elList.innerHTML = '';
-  const box = document.createElement('div');
-  box.className = 'errorBox';
-  box.textContent = String(err && (err.stack || err.message) ? (err.stack || err.message) : err);
-  elList.appendChild(box);
-}
-
-function escapeHtml(s){
-  return String(s ?? '')
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'","&#039;");
-}
-
-function getCategory(it){
-  return String((it.category ?? it.type ?? '')).trim().toLowerCase();
-}
-function getCraftable(it){
-  const v = String(it.craftable ?? '').trim().toLowerCase();
-  return (v === 'yes' || v === 'true' || v === '1');
-}
-function labelItem(it){
-  const en = (it.name_en ?? '').trim();
-  const ru = (it.name_ru ?? '').trim();
-  if (en && ru) return `${en} — ${ru}`;
-  return en || ru || '(no name)';
-}
-
-/* icon: accept MANY column names */
-function getIcon(it){
-  const candidates = [
-    it.icon,
-    it.icon_url,
-    it.iconLink,
-    it.image,
-    it.img,
-    it.picture,
-    it.pic
-  ];
-  for (const v of candidates){
-    const s = String(v ?? '').trim();
-    if (s) return s;
-  }
-  return '';
-}
-
-function iconHTML(it){
-  const url = getIcon(it);
-  if (!url){
-    return `<span class="icon"><span class="iconFallbackDot"></span></span>`;
-  }
-  // if image blocked/404 -> replace with dot
-  return `
-    <span class="icon">
-      <img src="${escapeHtml(url)}" alt=""
-           referrerpolicy="no-referrer"
-           onerror="this.remove(); this.parentNode.innerHTML='<span class=\\'iconFallbackDot\\'></span>';">
-    </span>`;
-}
-
-function hasRecipe(itemId){
-  const arr = recipeMap.get(String(itemId));
-  return !!(arr && arr.length);
-}
-
-/* ==========================
-   6) Build indexes
-   ========================== */
-function buildIndexes(){
-  itemsById.clear();
-  recipeMap.clear();
-
-  for (const raw of ITEMS){
-    const id = String(raw.id ?? '').trim();
-    if (!id) continue;
-
-    const it = {
-      id,
-      name_en: String(raw.name_en ?? '').trim(),
-      name_ru: String(raw.name_ru ?? '').trim(),
-      category: String(raw.category ?? '').trim(),
-      craftable: String(raw.craftable ?? '').trim(),
-
-      // keep ALL possible icon columns (so getIcon sees them)
-      icon: String(raw.icon ?? '').trim(),
-      icon_url: String(raw.icon_url ?? '').trim(),
-      iconLink: String(raw.iconLink ?? '').trim(),
-      image: String(raw.image ?? '').trim(),
-      img: String(raw.img ?? '').trim(),
-      picture: String(raw.picture ?? '').trim(),
-      pic: String(raw.pic ?? '').trim()
-    };
-    itemsById.set(id, it);
-  }
-
-  for (const r of RECIPES){
-    const itemId = String(r.item_id ?? '').trim();
-    const compId = String(r.component_id ?? '').trim();
-    const qty = Number(String(r.qty ?? '0').trim()) || 0;
-    if (!itemId || !compId || !qty) continue;
-
-    if (!recipeMap.has(itemId)) recipeMap.set(itemId, []);
-    recipeMap.get(itemId).push({ component_id: compId, qty });
-  }
-}
-
-/* ==========================
-   7) Tab + List
-   ========================== */
-function setTab(tab){
-  currentTab = tab;
-  tabWeapons.classList.toggle('active', tab === 'weapon');
-  elSearch.value = '';
-  currentItemId = null;
-  expanded.clear();
-  renderList();
-}
-
-function renderList(){
-  elDetails.style.display = 'none';
-  elList.style.display = 'block';
-  elList.innerHTML = '';
-
-  const q = (elSearch.value || '').trim().toLowerCase();
-
-  const filtered = Array.from(itemsById.values()).filter(it => getCategory(it) === currentTab);
-  const shown = !q ? filtered : filtered.filter(it => {
-    const en = (it.name_en || '').toLowerCase();
-    const ru = (it.name_ru || '').toLowerCase();
-    return en.includes(q) || ru.includes(q);
-  });
-
-  // icon stats
-  const iconsFilled = filtered.filter(it => !!getIcon(it)).length;
-
-  if (filtered.length === 0){
-    elStatus.textContent = `Weapons: 0\nNo weapons found. Проверь category="weapon" в Items.`;
-  } else {
-    elStatus.textContent = `Weapons: ${shown.length}\nIcons filled: ${iconsFilled}/${filtered.length}`;
-  }
-
-  for (const it of shown){
-    const row = document.createElement('div');
-    row.className = 'row clickable';
-    row.innerHTML = `
-      <div class="rowline">
-        <div class="left">
-          ${iconHTML(it)}
-          <div class="title">${escapeHtml(labelItem(it))}</div>
-        </div>
-        <div class="tag">${escapeHtml(getCategory(it))}</div>
-      </div>`;
-    row.addEventListener('click', () => openDetails(it.id));
-    elList.appendChild(row);
-  }
-
-  if (shown.length === 0){
-    const hint = document.createElement('div');
-    hint.className = 'meta';
-    hint.textContent = 'Nothing found.';
-    elList.appendChild(hint);
-  }
-}
-
-elSearch.addEventListener('input', renderList);
-tabWeapons.addEventListener('click', () => setTab('weapon'));
-
-/* ==========================
-   8) Details + Tree
-   ========================== */
-function openDetails(itemId){
-  currentItemId = String(itemId);
-  renderDetails();
-}
-
-function renderDetails(){
-  const root = itemsById.get(currentItemId);
-  if (!root){ showError('Item not found: ' + currentItemId); return; }
-
-  elList.style.display = 'none';
-  elDetails.style.display = 'block';
-
-  const comps = recipeMap.get(currentItemId) || [];
-
-  const header = `
-    <button class="back" id="btnBack">◀ Back</button>
-    <div class="meta">Components: ${escapeHtml(labelItem(root))}</div>
-    <div class="row">
-      <div class="rowline">
-        <div class="left">
-          ${iconHTML(root)}
-          <div class="title"><b>${escapeHtml(labelItem(root))}</b></div>
-        </div>
-        <div class="tag">${escapeHtml(getCategory(root))}</div>
-      </div>
-    </div>
-  `;
-
-  const container = document.createElement('div');
-  container.innerHTML = header;
-
-  const tree = document.createElement('div');
-  tree.className = 'indent';
-  container.appendChild(tree);
-
-  if (!comps.length){
-    const none = document.createElement('div');
-    none.className = 'meta';
-    none.textContent = 'No recipe for this item.';
-    tree.appendChild(none);
-  } else {
-    for (const c of comps){
-      tree.appendChild(renderNode(c.component_id, c.qty, currentItemId + '>' + c.component_id));
+      const headers = table[0].map(h => h.trim());
+      return table.slice(1).filter(r => r.some(x => String(x).trim() !== '')).map(r => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = (r[i] ?? '').trim());
+        return obj;
+      });
     }
-    const tip = document.createElement('div');
-    tip.className = 'tip';
-    tip.textContent = 'Tip: Click ▶ Expand to раскрыть крафт компонента (qty будет умножаться).';
-    tree.appendChild(tip);
-  }
 
-  elDetails.innerHTML = '';
-  elDetails.appendChild(container);
+    function normalizeItems(items) {
+      // ожидаем колонки: id, name_en, name_ru, category, craftable, icon
+      return items.map(x => ({
+        id: String(x.id || '').trim(),
+        name_en: x.name_en || '',
+        name_ru: x.name_ru || '',
+        category: (x.category || '').trim(),
+        craftable: (x.craftable || '').trim().toLowerCase(), // yes/no
+        icon: (x.icon || '').trim()
+      })).filter(x => x.id);
+    }
 
-  document.getElementById('btnBack').addEventListener('click', () => setTab(currentTab));
-}
+    function normalizeRecipes(recipes) {
+      // ожидаем: item_id, component_id, qty
+      return recipes.map(x => ({
+        item_id: String(x.item_id || '').trim(),
+        component_id: String(x.component_id || '').trim(),
+        qty: Number(String(x.qty || '0').trim()) || 0
+      })).filter(x => x.item_id && x.component_id && x.qty > 0);
+    }
 
-function renderNode(itemId, qty, key){
-  const it = itemsById.get(String(itemId));
-  const craft = it ? (getCraftable(it) && hasRecipe(it.id)) : false;
+    function buildIndexes() {
+      itemsById = new Map();
+      for (const it of ITEMS) itemsById.set(it.id, it);
 
-  const row = document.createElement('div');
-  row.className = 'row';
-
-  const btnHtml = craft
-    ? `<button class="btn" data-key="${escapeHtml(key)}">${expanded.has(key) ? '▼ Collapse' : '▶ Expand'}</button>`
-    : `<span class="tag">base</span>`;
-
-  row.innerHTML = `
-    <div class="rowline">
-      <div class="left">
-        ${it ? iconHTML(it) : `<span class="icon"><span class="iconFallbackDot"></span></span>`}
-        <div class="title">${escapeHtml(it ? labelItem(it) : ('Unknown ID: ' + itemId))}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        ${btnHtml}
-        <div class="qty">x${formatQty(qty)}</div>
-      </div>
-    </div>
-  `;
-
-  const childrenWrap = document.createElement('div');
-  childrenWrap.className = 'indent';
-  childrenWrap.style.display = expanded.has(key) ? 'block' : 'none';
-  row.appendChild(childrenWrap);
-
-  if (craft){
-    const btn = row.querySelector('button.btn');
-    btn.addEventListener('click', () => {
-      if (expanded.has(key)) expanded.delete(key);
-      else expanded.add(key);
-      renderDetails();
-    });
-  }
-
-  if (craft && expanded.has(key)){
-    const children = recipeMap.get(String(itemId)) || [];
-    if (!children.length){
-      const m = document.createElement('div');
-      m.className = 'meta';
-      m.textContent = 'No recipe rows for this item.';
-      childrenWrap.appendChild(m);
-    } else {
-      for (const ch of children){
-        const childQty = qty * ch.qty;
-        const childKey = key + '>' + ch.component_id;
-        childrenWrap.appendChild(renderNode(ch.component_id, childQty, childKey));
+      recipeByItemId = new Map();
+      for (const r of RECIPES) {
+        if (!recipeByItemId.has(r.item_id)) recipeByItemId.set(r.item_id, []);
+        recipeByItemId.get(r.item_id).push(r);
       }
     }
-  }
 
-  return row;
-}
+    function iconHTML(item) {
+      const url = item?.icon && item.icon.startsWith('http') ? item.icon : '';
+      if (!url) return `<div class="icon"></div>`;
+      // onerror -> fallback to empty box
+      return `
+        <div class="icon">
+          <img src="${url}" alt="" loading="lazy"
+               onerror="this.closest('.icon').innerHTML='';">
+        </div>
+      `;
+    }
 
-function formatQty(n){
-  if (Number.isInteger(n)) return String(n);
-  return String(Math.round(n * 1000) / 1000);
-}
+    function el(tag, html) {
+      const d = document.createElement(tag);
+      if (html !== undefined) d.innerHTML = html;
+      return d;
+    }
 
-/* ==========================
-   9) Init
-   ========================== */
-async function init(){
-  try{
-    elStatus.textContent = 'Loading Items...';
-    ITEMS = await loadCSV(ITEMS_URL);
+    function setMeta(text) {
+      document.getElementById('meta').textContent = text;
+    }
 
-    elStatus.textContent = 'Loading Recipes...';
-    RECIPES = await loadCSV(RECIPES_URL);
+    function renderWeaponsList() {
+      currentView = 'weaponsList';
+      currentWeaponId = null;
 
-    buildIndexes();
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const weapons = ITEMS.filter(it => it.category === 'weapon');
+      const filtered = weapons.filter(it => {
+        if (!q) return true;
+        return (it.name_en || '').toLowerCase().includes(q) || (it.name_ru || '').toLowerCase().includes(q);
+      });
 
-    console.log('ITEMS:', ITEMS);
-    console.log('RECIPES:', RECIPES);
+      const iconsFilled = weapons.reduce((acc, it) => acc + (it.icon && it.icon.startsWith('http') ? 1 : 0), 0);
 
-    elStatus.textContent = 'Ready';
-    setTab('weapon');
-  }catch(e){
-    console.error(e);
-    showError(e);
-  }
-}
+      setMeta(`Weapons: ${filtered.length} | Icons filled: ${iconsFilled}/${weapons.length}`);
 
-init();
-</script>
+      const content = document.getElementById('content');
+      content.innerHTML = '';
 
+      if (!weapons.length) {
+        content.appendChild(el('div', `<div class="error">No weapons found. Проверь в таблице Items: у оружия category должно быть "weapon".</div>`));
+        return;
+      }
+
+      for (const it of filtered) {
+        const row = el('div');
+        row.className = 'row clickable';
+        row.innerHTML = `
+          <div class="left">
+            ${iconHTML(it)}
+            <div class="title">${it.name_en} — ${it.name_ru}</div>
+          </div>
+          <div class="right">
+            <span class="pill">${it.category}</span>
+          </div>
+        `;
+        row.addEventListener('click', () => {
+          currentWeaponId = it.id;
+          expanded.clear();
+          renderWeaponTree(it.id);
+        });
+        content.appendChild(row);
+      }
+    }
+
+    function renderWeaponTree(weaponId) {
+      currentView = 'weaponTree';
+      const weapon = itemsById.get(String(weaponId));
+
+      const content = document.getElementById('content');
+      content.innerHTML = '';
+
+      const backbar = el('div');
+      backbar.className = 'backbar';
+      backbar.innerHTML = `<button class="btn" id="backBtn">◀ Back</button><div class="small">Components: ${weapon?.name_en || ''} — ${weapon?.name_ru || ''}</div>`;
+      content.appendChild(backbar);
+
+      document.getElementById('backBtn').addEventListener('click', () => renderWeaponsList());
+
+      if (!weapon) {
+        content.appendChild(el('div', `<div class="error">Weapon not found by id=${weaponId}</div>`));
+        return;
+      }
+
+      // Корень дерева — сам weapon (qty=1)
+      const tree = el('div');
+      tree.className = 'tree';
+      tree.appendChild(renderNode(weapon.id, 1, 0, true)); // forceShowChildren=true for root
+      content.appendChild(tree);
+
+      content.appendChild(el('div', `<div class="tip">Tip: Click Expand to раскрыть крафт компонента (qty умножается).</div>`));
+    }
+
+    function hasRecipe(itemId) {
+      const arr = recipeByItemId.get(String(itemId));
+      return Array.isArray(arr) && arr.length > 0;
+    }
+
+    function isCraftable(item) {
+      return (item?.craftable || '').toLowerCase() === 'yes';
+    }
+
+    function renderNode(itemId, qty, depth, forceShowChildren = false) {
+      const item = itemsById.get(String(itemId)) || { id: String(itemId), name_en: `Unknown #${itemId}`, name_ru: '', category: 'unknown', craftable: 'no', icon: '' };
+      const canExpand = isCraftable(item) && hasRecipe(item.id);
+
+      const node = el('div');
+      node.className = 'node';
+
+      // key для expand/collapse
+      const key = String(item.id);
+      const opened = forceShowChildren ? true : expanded.has(key);
+
+      const row = el('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <div class="left">
+          ${iconHTML(item)}
+          <div class="title">${item.name_en} — ${item.name_ru}</div>
+        </div>
+        <div class="right">
+          <span class="pill">${item.category || 'item'}</span>
+          <span class="pill">${canExpand ? (opened ? 'expanded' : 'craftable') : 'base'}</span>
+          <div class="qty">x${qty}</div>
+          ${canExpand && !forceShowChildren ? `<button class="btn">${opened ? 'Collapse' : 'Expand'}</button>` : ``}
+        </div>
+      `;
+      node.appendChild(row);
+
+      if (canExpand && !forceShowChildren) {
+        const btn = row.querySelector('button.btn');
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (expanded.has(key)) expanded.delete(key);
+          else expanded.add(key);
+          // перерисовать всю страницу дерева
+          renderWeaponTree(currentWeaponId);
+        });
+      }
+
+      // дети
+      const shouldShowChildren = forceShowChildren || (canExpand && opened);
+      if (shouldShowChildren) {
+        const parts = recipeByItemId.get(String(item.id)) || [];
+        if (parts.length) {
+          const children = el('div');
+          children.className = 'children';
+
+          for (const p of parts) {
+            const childId = p.component_id;
+            const childQty = qty * p.qty; // умножаем
+            const childItem = itemsById.get(String(childId));
+            const childCanExpand = isCraftable(childItem) && hasRecipe(childId);
+
+            // Рендерим ребёнка
+            // Если ребёнок craftable, то он показывается свернутым, пока ты не Expand его
+            children.appendChild(renderNode(childId, childQty, depth + 1, false));
+          }
+          node.appendChild(children);
+        }
+      }
+
+      return node;
+    }
+
+    async function init() {
+      try {
+        setMeta('Loading data...');
+        const itemsRaw = await loadCSV(ITEMS_URL);
+        const recipesRaw = await loadCSV(RECIPES_URL);
+
+        ITEMS = normalizeItems(itemsRaw);
+        RECIPES = normalizeRecipes(recipesRaw);
+        buildIndexes();
+
+        console.log('ITEMS:', ITEMS);
+        console.log('RECIPES:', RECIPES);
+
+        // Telegram
+        const tg = window.Telegram?.WebApp;
+        if (tg) tg.ready();
+
+        renderWeaponsList();
+
+      } catch (err) {
+        console.error(err);
+        setMeta('Error');
+        document.getElementById('content').innerHTML = `<div class="error">${String(err)}</div>`;
+      }
+    }
+
+    // search handler
+    document.getElementById('search').addEventListener('input', () => {
+      if (currentView === 'weaponsList') renderWeaponsList();
+    });
+
+    // tab (пока одна вкладка)
+    document.getElementById('tabWeapons').addEventListener('click', () => {
+      document.getElementById('tabWeapons').classList.add('active');
+      expanded.clear();
+      renderWeaponsList();
+    });
+
+    init();
+  </script>
 </body>
 </html>
