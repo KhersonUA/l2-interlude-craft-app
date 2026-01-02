@@ -2,153 +2,225 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>L2 Interlude Craft Calculator</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-/* === ТВОИ СТИЛИ НЕ ТРОГАЛ === */
-:root{
-  --bg:#0b1220;
-  --text:#e5e7eb;
-  --muted:#9ca3af;
-  --accent:#f59e0b;
-  --border:#2b3a57;
-}
-body{
+body {
+  margin: 0;
   font-family: Arial, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  margin:0;
-  padding:16px;
+  background: #0f172a;
+  color: #e5e7eb;
 }
-.btn{
-  background:#0b1a33;
-  color:var(--text);
-  border:1px solid #36507a;
-  padding:6px 10px;
-  border-radius:6px;
-  cursor:pointer;
-  font-size:13px;
+
+header {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  background: #020617;
 }
-.btn.active{
-  border-color: var(--accent);
+
+.tab {
+  flex: 1;
+  padding: 8px;
+  background: #1e293b;
+  text-align: center;
+  border-radius: 6px;
+  cursor: pointer;
 }
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:10px;
+
+.tab.active {
+  background: #38bdf8;
+  color: #020617;
+  font-weight: bold;
 }
-.top-tabs{ display:flex; gap:8px; }
-.list{ margin-top:10px; }
-.item-row{
-  background:#13203a;
-  border:1px solid #223455;
-  padding:10px;
-  border-radius:8px;
-  margin-bottom:8px;
-  cursor:pointer;
-  display:flex;
-  justify-content:space-between;
+
+.lang {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  cursor: pointer;
 }
-.item-left{ display:flex; gap:10px; align-items:center; }
-.icon{
-  width:22px;height:22px;border-radius:6px;
+
+.container {
+  padding: 10px;
 }
-.badge{
-  font-size:11px;
-  border:1px solid var(--border);
-  padding:2px 6px;
-  border-radius:999px;
+
+.search {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: none;
+}
+
+.item {
+  background: #1e293b;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item img {
+  width: 32px;
+  height: 32px;
+}
+
+.recipe {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 0;
+}
+
+input[type="number"] {
+  width: 80px;
+  padding: 4px;
+  border-radius: 4px;
+  border: none;
+}
+
+.total {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #38bdf8;
 }
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
-  <div class="top-tabs">
-    <button id="tabWeapons" class="btn active">Weapons</button>
-    <button id="tabArmors" class="btn">Armors</button>
-    <button id="tabJewelry" class="btn">Jewelry</button>
-    <button id="tabMaterials" class="btn">Materials</button>
-  </div>
+<header>
+  <div class="tab active" data-tab="all">All</div>
+  <div class="tab" data-tab="weapon">Weapons</div>
+  <div class="tab" data-tab="armor">Armor</div>
+  <div class="tab" data-tab="jewelry">Jewelry</div>
+  <div class="tab" data-tab="material">Materials</div>
+  <div class="lang" id="langBtn">RU</div>
+</header>
+
+<div class="container">
+  <input class="search" id="search" placeholder="Search">
+  <div id="list"></div>
 </div>
 
-<input id="searchInput" placeholder="Search item" style="width:100%;padding:10px;">
-<div class="list" id="itemsList"></div>
-
 <script>
-const ITEMS_URL =
-'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
+const ITEMS_URL = 'PASTE_ITEMS_CSV_URL';
+const RECIPES_URL = 'PASTE_RECIPES_CSV_URL';
 
 let ITEMS = [];
-let activeCategory = 'weapon';
+let RECIPES = [];
+let LANG = 'en';
+let TAB = 'all';
 
-function parseCSV(text){
-  const rows = text.trim().split('\n').map(r=>r.split(','));
-  const h = rows.shift();
-  return rows.map(r=>{
-    const o={}; h.forEach((k,i)=>o[k]=r[i]);
+async function loadCSV(url) {
+  const r = await fetch(url);
+  const t = await r.text();
+  const lines = t.trim().split('\n');
+  const h = lines[0].split(',');
+  return lines.slice(1).map(l => {
+    const v = l.split(',');
+    const o = {};
+    h.forEach((k,i)=>o[k]=v[i]);
     return o;
   });
 }
 
-async function loadItems(){
-  const res = await fetch(ITEMS_URL,{cache:'no-store'});
-  ITEMS = parseCSV(await res.text());
+async function loadData() {
+  ITEMS = await loadCSV(ITEMS_URL);
+  RECIPES = await loadCSV(RECIPES_URL);
   render();
 }
 
-function isCraftable(it){
-  return String(it.craftable).toLowerCase()==='yes';
-}
+function render() {
+  const list = document.getElementById('list');
+  const q = document.getElementById('search').value.toLowerCase();
+  list.innerHTML = '';
 
-function filterItems(){
-  return ITEMS.filter(it=>{
-    const cat = String(it.category).toLowerCase();
-    if(activeCategory==='materials'){
-      return isCraftable(it) && cat==='material';
+  ITEMS.filter(i => {
+    if (TAB !== 'all' && i.category !== TAB) return false;
+    const name = LANG === 'en' ? i.name_en : i.name_ru;
+    return name.toLowerCase().includes(q);
+  }).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'item';
+
+    const name = LANG === 'en' ? item.name_en : item.name_ru;
+
+    div.innerHTML = `
+      <div class="item-header">
+        <img src="${item.icon}">
+        <b>${name}</b>
+      </div>
+    `;
+
+    const recipe = RECIPES.filter(r => r.result_id === item.id);
+    if (recipe.length) {
+      const rdiv = document.createElement('div');
+      rdiv.className = 'recipe';
+
+      recipe.forEach(r => {
+        const comp = ITEMS.find(x => x.id === r.component_id);
+        if (!comp) return;
+
+        const cname = LANG === 'en' ? comp.name_en : comp.name_ru;
+
+        rdiv.innerHTML += `
+          <div class="row">
+            <span>${cname} x${r.count}</span>
+            <input type="number" min="0" value="0" oninput="recalc(this, ${r.count})">
+          </div>
+        `;
+      });
+
+      rdiv.innerHTML += `<div class="total">Total: <span>0</span> Adena</div>`;
+      div.appendChild(rdiv);
     }
-    return cat===activeCategory;
+
+    list.appendChild(div);
   });
 }
 
-function render(){
-  const q = searchInput.value.toLowerCase();
-  itemsList.innerHTML = filterItems()
-    .filter(it=>
-      (it.name_en||'').toLowerCase().includes(q) ||
-      (it.name_ru||'').toLowerCase().includes(q)
-    )
-    .map(it=>`
-      <div class="item-row">
-        <div class="item-left">
-          ${it.icon?`<img class="icon" src="${it.icon}">`:''}
-          <div>${it.name_en} — ${it.name_ru}</div>
-        </div>
-        <span class="badge">${it.category}</span>
-      </div>
-    `).join('');
+function recalc(input, count) {
+  const recipe = input.closest('.recipe');
+  let total = 0;
+  recipe.querySelectorAll('input').forEach(i => {
+    total += Number(i.value || 0) * count;
+  });
+  recipe.querySelector('.total span').textContent = total;
 }
 
-/* === TAB HANDLERS === */
-function setTab(tab,cat){
-  document.querySelectorAll('.btn').forEach(b=>b.classList.remove('active'));
-  tab.classList.add('active');
-  activeCategory=cat;
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    TAB = t.dataset.tab;
+    render();
+  };
+});
+
+document.getElementById('langBtn').onclick = () => {
+  LANG = LANG === 'en' ? 'ru' : 'en';
+  document.getElementById('langBtn').textContent = LANG.toUpperCase();
   render();
-}
+};
 
-tabWeapons.onclick=()=>setTab(tabWeapons,'weapon');
-tabArmors.onclick =()=>setTab(tabArmors,'armor');
-tabJewelry.onclick=()=>setTab(tabJewelry,'jewelry');
-tabMaterials.onclick=()=>setTab(tabMaterials,'materials');
+document.getElementById('search').oninput = render;
 
-searchInput.oninput=render;
-
-loadItems();
+Telegram.WebApp.ready();
+loadData();
 </script>
 
 </body>
