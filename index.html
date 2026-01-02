@@ -67,7 +67,6 @@
       margin:10px 0;
     }
 
-    /* list row */
     .row{
       background:var(--panel);
       padding:10px 12px;
@@ -111,6 +110,7 @@
       text-align:right;
     }
 
+    /* icon box (always same size) */
     .icon{
       width:28px;height:28px;
       border-radius:6px;
@@ -128,12 +128,10 @@
       object-fit:cover;
       display:block;
     }
-    .icon.fallback{
-      border-radius:50%;
-      width:16px;height:16px;
-      flex:0 0 16px;
-      background:#475569;
-      border:none;
+    .iconFallbackDot{
+      width:14px;height:14px;border-radius:50%;
+      background:#64748b;
+      display:block;
     }
 
     .btn{
@@ -189,7 +187,7 @@
 
 <script>
 /* ==========================
-   0) CSV URLS (у тебя уже стоят)
+   0) CSV URLS
    ========================== */
 const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
 const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
@@ -197,10 +195,7 @@ const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32y
 /* ==========================
    1) Telegram
    ========================== */
-try{
-  const tg = window.Telegram?.WebApp;
-  tg?.ready();
-} catch(e){}
+try{ window.Telegram?.WebApp?.ready(); } catch(e){}
 
 /* ==========================
    2) DOM
@@ -223,7 +218,7 @@ let currentItemId = null;
 const expanded = new Set();      // node keys for expand/collapse
 
 /* ==========================
-   4) CSV PARSER (quotes-safe)
+   4) CSV PARSER (quotes-safe + BOM-safe)
    ========================== */
 function parseCSV(text){
   const rows = [];
@@ -251,7 +246,12 @@ function parseCSV(text){
   if (cell.length || row.length){ row.push(cell); rows.push(row); }
 
   if (!rows.length) return [];
-  const headers = rows[0].map(h => (h||'').trim());
+  const headers = rows[0].map((h, idx) => {
+    let s = String(h || '').trim();
+    // remove BOM if present in first header
+    if (idx === 0) s = s.replace(/^\uFEFF/, '');
+    return s;
+  });
 
   return rows.slice(1)
     .filter(r => r.some(x => String(x||'').trim() !== ''))
@@ -263,7 +263,6 @@ function parseCSV(text){
 }
 
 async function loadCSV(url){
-  // cache-buster to avoid stale sheets
   const bust = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
   const res = await fetch(url + bust, { cache: 'no-store' });
   if (!res.ok) throw new Error('Fetch failed: ' + res.status + ' | ' + url);
@@ -305,15 +304,39 @@ function labelItem(it){
   if (en && ru) return `${en} — ${ru}`;
   return en || ru || '(no name)';
 }
+
+/* icon: accept MANY column names */
 function getIcon(it){
-  const icon = String(it.icon ?? '').trim();
-  return icon;
+  const candidates = [
+    it.icon,
+    it.icon_url,
+    it.iconLink,
+    it.image,
+    it.img,
+    it.picture,
+    it.pic
+  ];
+  for (const v of candidates){
+    const s = String(v ?? '').trim();
+    if (s) return s;
+  }
+  return '';
 }
+
 function iconHTML(it){
   const url = getIcon(it);
-  if (!url) return `<span class="icon fallback"></span>`;
-  return `<span class="icon"><img src="${escapeHtml(url)}" alt=""></span>`;
+  if (!url){
+    return `<span class="icon"><span class="iconFallbackDot"></span></span>`;
+  }
+  // if image blocked/404 -> replace with dot
+  return `
+    <span class="icon">
+      <img src="${escapeHtml(url)}" alt=""
+           referrerpolicy="no-referrer"
+           onerror="this.remove(); this.parentNode.innerHTML='<span class=\\'iconFallbackDot\\'></span>';">
+    </span>`;
 }
+
 function hasRecipe(itemId){
   const arr = recipeMap.get(String(itemId));
   return !!(arr && arr.length);
@@ -330,14 +353,21 @@ function buildIndexes(){
     const id = String(raw.id ?? '').trim();
     if (!id) continue;
 
-    // normalize fields (keeps your current columns)
     const it = {
       id,
       name_en: String(raw.name_en ?? '').trim(),
       name_ru: String(raw.name_ru ?? '').trim(),
       category: String(raw.category ?? '').trim(),
       craftable: String(raw.craftable ?? '').trim(),
-      icon: String(raw.icon ?? '').trim()
+
+      // keep ALL possible icon columns (so getIcon sees them)
+      icon: String(raw.icon ?? '').trim(),
+      icon_url: String(raw.icon_url ?? '').trim(),
+      iconLink: String(raw.iconLink ?? '').trim(),
+      image: String(raw.image ?? '').trim(),
+      img: String(raw.img ?? '').trim(),
+      picture: String(raw.picture ?? '').trim(),
+      pic: String(raw.pic ?? '').trim()
     };
     itemsById.set(id, it);
   }
@@ -379,10 +409,13 @@ function renderList(){
     return en.includes(q) || ru.includes(q);
   });
 
+  // icon stats
+  const iconsFilled = filtered.filter(it => !!getIcon(it)).length;
+
   if (filtered.length === 0){
     elStatus.textContent = `Weapons: 0\nNo weapons found. Проверь category="weapon" в Items.`;
   } else {
-    elStatus.textContent = `Weapons: ${shown.length}`;
+    elStatus.textContent = `Weapons: ${shown.length}\nIcons filled: ${iconsFilled}/${filtered.length}`;
   }
 
   for (const it of shown){
@@ -394,7 +427,7 @@ function renderList(){
           ${iconHTML(it)}
           <div class="title">${escapeHtml(labelItem(it))}</div>
         </div>
-        <div class="tag">${escapeHtml(it.grade || '')}</div>
+        <div class="tag">${escapeHtml(getCategory(it))}</div>
       </div>`;
     row.addEventListener('click', () => openDetails(it.id));
     elList.appendChild(row);
@@ -484,7 +517,7 @@ function renderNode(itemId, qty, key){
   row.innerHTML = `
     <div class="rowline">
       <div class="left">
-        ${it ? iconHTML(it) : `<span class="icon fallback"></span>`}
+        ${it ? iconHTML(it) : `<span class="icon"><span class="iconFallbackDot"></span></span>`}
         <div class="title">${escapeHtml(it ? labelItem(it) : ('Unknown ID: ' + itemId))}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
@@ -504,11 +537,10 @@ function renderNode(itemId, qty, key){
     btn.addEventListener('click', () => {
       if (expanded.has(key)) expanded.delete(key);
       else expanded.add(key);
-      renderDetails(); // rerender for simplicity
+      renderDetails();
     });
   }
 
-  // expanded children
   if (craft && expanded.has(key)){
     const children = recipeMap.get(String(itemId)) || [];
     if (!children.length){
