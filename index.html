@@ -17,6 +17,7 @@
       --muted:#93a4b8;
       --accent:#fbbf24;
       --line:#334155;
+      --danger:#7f1d1d;
     }
     body{
       font-family: Arial, sans-serif;
@@ -31,9 +32,11 @@
     .tab{
       padding:8px 12px;border-radius:8px;
       border:1px solid var(--line);
-      background:var(--panel2); color:var(--text);
+      background:var(--panel2);
+      color:var(--text);
       cursor:pointer;
       font-size:13px;
+      user-select:none;
     }
     .tab.active{background:var(--panel);}
 
@@ -47,6 +50,7 @@
       background:#ffffff;
       color:#111827;
       box-sizing:border-box;
+      outline:none;
     }
 
     .meta{
@@ -54,51 +58,82 @@
       margin:0 0 8px 0;
       white-space:pre-wrap;
     }
+    .errorBox{
+      background: var(--danger);
+      border:1px solid #ef4444;
+      padding:10px;
+      border-radius:8px;
+      white-space:pre-wrap;
+      margin:10px 0;
+    }
 
-    .list .row{
+    /* list row */
+    .row{
       background:var(--panel);
       padding:10px 12px;
       border-radius:8px;
       margin-bottom:8px;
-      cursor:pointer;
       border:1px solid #23324a;
     }
-    .list .row:hover{background:var(--line);}
+    .row.clickable{cursor:pointer;}
+    .row.clickable:hover{background:var(--line);}
 
     .rowline{
-      display:flex; align-items:center; justify-content:space-between;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
       gap:12px;
+    }
+
+    .left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+      flex:1;
     }
     .title{
       font-size:14px;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .qty{
-      font-weight:700; color:var(--accent);
-      min-width:60px;
-      text-align:right;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
     .tag{
-      font-size:11px; color:var(--muted);
-      min-width:44px; text-align:right;
-    }
-
-    .back{
-      display:inline-block;
-      margin:0 0 10px 0;
-      padding:6px 10px;
-      border-radius:8px;
-      border:1px solid var(--line);
-      background:var(--panel2);
-      color:var(--text);
-      cursor:pointer;
-      font-size:13px;
-    }
-
-    .tip{
-      margin-top:8px;
-      font-size:12px;
+      font-size:11px;
       color:var(--muted);
+      min-width:44px;
+      text-align:right;
+    }
+    .qty{
+      font-weight:700;
+      color:var(--accent);
+      min-width:70px;
+      text-align:right;
+    }
+
+    .icon{
+      width:28px;height:28px;
+      border-radius:6px;
+      background:#0b1224;
+      border:1px solid #20304a;
+      flex:0 0 28px;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .icon img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .icon.fallback{
+      border-radius:50%;
+      width:16px;height:16px;
+      flex:0 0 16px;
+      background:#475569;
+      border:none;
     }
 
     .btn{
@@ -113,7 +148,28 @@
     }
     .btn:hover{background:var(--line);}
 
-    .indent{margin-left:18px;border-left:2px solid #24344f;padding-left:10px;}
+    .back{
+      display:inline-block;
+      margin:0 0 10px 0;
+      padding:6px 10px;
+      border-radius:8px;
+      border:1px solid var(--line);
+      background:var(--panel2);
+      color:var(--text);
+      cursor:pointer;
+      font-size:13px;
+    }
+    .indent{
+      margin-left:18px;
+      border-left:2px solid #24344f;
+      padding-left:10px;
+      margin-top:8px;
+    }
+    .tip{
+      margin-top:8px;
+      font-size:12px;
+      color:var(--muted);
+    }
   </style>
 </head>
 
@@ -128,250 +184,259 @@
 
   <div class="meta" id="status">Loading data...</div>
 
-  <div id="viewList" class="list"></div>
+  <div id="viewList"></div>
   <div id="viewDetails" style="display:none;"></div>
 
 <script>
 /* ==========================
-   0) ВСТАВЬ СВОИ CSV ССЫЛКИ
+   0) CSV URLS (у тебя уже стоят)
    ========================== */
 const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
 const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
 
 /* ==========================
-   1) GLOBAL STATE
+   1) Telegram
    ========================== */
-let ITEMS = [];
-let RECIPES = [];
+try{
+  const tg = window.Telegram?.WebApp;
+  tg?.ready();
+} catch(e){}
 
-const itemsById = new Map();          // id -> item
-const recipeMap = new Map();          // item_id -> array of {component_id, qty}
-let currentTab = 'weapon';
-let currentList = [];                // filtered list for tab
-let currentItemId = null;            // opened details root
-const expanded = new Set();          // expanded node keys
-
+/* ==========================
+   2) DOM
+   ========================== */
 const elSearch  = document.getElementById('search');
 const elStatus  = document.getElementById('status');
 const elList    = document.getElementById('viewList');
 const elDetails = document.getElementById('viewDetails');
-
-document.getElementById('tabWeapons').addEventListener('click', () => {
-  setTab('weapon');
-});
+const tabWeapons = document.getElementById('tabWeapons');
 
 /* ==========================
-   2) CSV PARSER (с кавычками)
+   3) State
+   ========================== */
+let ITEMS = [];
+let RECIPES = [];
+const itemsById = new Map();     // id -> item
+const recipeMap = new Map();     // item_id -> [{component_id, qty}]
+let currentTab = 'weapon';
+let currentItemId = null;
+const expanded = new Set();      // node keys for expand/collapse
+
+/* ==========================
+   4) CSV PARSER (quotes-safe)
    ========================== */
 function parseCSV(text){
-  // robust enough for quotes + commas
   const rows = [];
   let row = [];
-  let cur = '';
+  let cell = '';
   let inQuotes = false;
 
   for (let i=0;i<text.length;i++){
-    const ch = text[i];
-    const next = text[i+1];
+    const c = text[i];
+    const n = text[i+1];
 
-    if (ch === '"' && inQuotes && next === '"'){ // escaped quote
-      cur += '"'; i++;
+    if (c === '"' && inQuotes && n === '"'){ cell += '"'; i++; continue; }
+    if (c === '"'){ inQuotes = !inQuotes; continue; }
+
+    if (!inQuotes && c === ','){ row.push(cell); cell=''; continue; }
+    if (!inQuotes && (c === '\n' || c === '\r')){
+      if (c === '\r' && n === '\n') i++;
+      row.push(cell); cell='';
+      if (!(row.length===1 && row[0].trim()==='')) rows.push(row);
+      row=[];
       continue;
     }
-    if (ch === '"'){
-      inQuotes = !inQuotes;
-      continue;
-    }
-    if (ch === ',' && !inQuotes){
-      row.push(cur);
-      cur = '';
-      continue;
-    }
-    if ((ch === '\n' || ch === '\r') && !inQuotes){
-      if (ch === '\r' && next === '\n'){ i++; }
-      row.push(cur);
-      cur = '';
-      // skip empty last line
-      if (row.length === 1 && row[0].trim() === ''){
-        row = [];
-        continue;
-      }
-      rows.push(row);
-      row = [];
-      continue;
-    }
-    cur += ch;
+    cell += c;
   }
-  if (cur.length || row.length){
-    row.push(cur);
-    rows.push(row);
-  }
+  if (cell.length || row.length){ row.push(cell); rows.push(row); }
 
   if (!rows.length) return [];
   const headers = rows[0].map(h => (h||'').trim());
-  const out = [];
 
-  for (let r=1; r<rows.length; r++){
-    const vals = rows[r];
-    if (!vals || !vals.length) continue;
-    const obj = {};
-    for (let c=0; c<headers.length; c++){
-      const key = headers[c];
-      obj[key] = (vals[c] ?? '').trim();
-    }
-    out.push(obj);
-  }
-  return out;
+  return rows.slice(1)
+    .filter(r => r.some(x => String(x||'').trim() !== ''))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h,idx) => obj[h] = String(r[idx] ?? '').trim());
+      return obj;
+    });
 }
 
 async function loadCSV(url){
-  // cache buster to avoid stale data
+  // cache-buster to avoid stale sheets
   const bust = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
   const res = await fetch(url + bust, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+  if (!res.ok) throw new Error('Fetch failed: ' + res.status + ' | ' + url);
   const text = await res.text();
   return parseCSV(text);
 }
 
 /* ==========================
-   3) NORMALIZERS
+   5) Helpers
    ========================== */
-function getId(obj){
-  return String(obj.id ?? obj.item_id ?? '').trim();
-}
-function getNameEN(item){
-  return (item.name_en ?? item.en ?? item.nameEN ?? '').trim();
-}
-function getNameRU(item){
-  return (item.name_ru ?? item.ru ?? item.nameRU ?? '').trim();
-}
-function getCategory(item){
-  // support both category and type
-  return String((item.category ?? item.type ?? '')).trim().toLowerCase();
-}
-function isCraftable(item){
-  // craftable: yes/true/1 ; or is_base: false
-  const c = String(item.craftable ?? '').trim().toLowerCase();
-  if (c === 'yes' || c === 'true' || c === '1') return true;
-  const isBase = String(item.is_base ?? '').trim().toLowerCase();
-  if (isBase === 'true' || isBase === '1' || isBase === 'yes') return false;
-  // if recipe exists, also treat as craftable
-  const id = String(item.id ?? '').trim();
-  return recipeMap.has(id);
+function showError(err){
+  elStatus.textContent = 'ERROR';
+  elList.innerHTML = '';
+  const box = document.createElement('div');
+  box.className = 'errorBox';
+  box.textContent = String(err && (err.stack || err.message) ? (err.stack || err.message) : err);
+  elList.appendChild(box);
 }
 
-function labelItem(item){
-  const en = getNameEN(item);
-  const ru = getNameRU(item);
+function escapeHtml(s){
+  return String(s ?? '')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+}
+
+function getCategory(it){
+  return String((it.category ?? it.type ?? '')).trim().toLowerCase();
+}
+function getCraftable(it){
+  const v = String(it.craftable ?? '').trim().toLowerCase();
+  return (v === 'yes' || v === 'true' || v === '1');
+}
+function labelItem(it){
+  const en = (it.name_en ?? '').trim();
+  const ru = (it.name_ru ?? '').trim();
   if (en && ru) return `${en} — ${ru}`;
   return en || ru || '(no name)';
 }
+function getIcon(it){
+  const icon = String(it.icon ?? '').trim();
+  return icon;
+}
+function iconHTML(it){
+  const url = getIcon(it);
+  if (!url) return `<span class="icon fallback"></span>`;
+  return `<span class="icon"><img src="${escapeHtml(url)}" alt=""></span>`;
+}
+function hasRecipe(itemId){
+  const arr = recipeMap.get(String(itemId));
+  return !!(arr && arr.length);
+}
 
 /* ==========================
-   4) BUILD INDEXES
+   6) Build indexes
    ========================== */
 function buildIndexes(){
   itemsById.clear();
   recipeMap.clear();
 
-  for (const it of ITEMS){
-    const id = String(it.id ?? '').trim();
+  for (const raw of ITEMS){
+    const id = String(raw.id ?? '').trim();
     if (!id) continue;
+
+    // normalize fields (keeps your current columns)
+    const it = {
+      id,
+      name_en: String(raw.name_en ?? '').trim(),
+      name_ru: String(raw.name_ru ?? '').trim(),
+      category: String(raw.category ?? '').trim(),
+      craftable: String(raw.craftable ?? '').trim(),
+      icon: String(raw.icon ?? '').trim()
+    };
     itemsById.set(id, it);
   }
 
   for (const r of RECIPES){
     const itemId = String(r.item_id ?? '').trim();
     const compId = String(r.component_id ?? '').trim();
-    const qty    = Number(String(r.qty ?? '0').trim()) || 0;
+    const qty = Number(String(r.qty ?? '0').trim()) || 0;
     if (!itemId || !compId || !qty) continue;
+
     if (!recipeMap.has(itemId)) recipeMap.set(itemId, []);
     recipeMap.get(itemId).push({ component_id: compId, qty });
   }
 }
 
 /* ==========================
-   5) UI: TAB + LIST
+   7) Tab + List
    ========================== */
 function setTab(tab){
   currentTab = tab;
-  document.getElementById('tabWeapons').classList.toggle('active', tab === 'weapon');
+  tabWeapons.classList.toggle('active', tab === 'weapon');
   elSearch.value = '';
   currentItemId = null;
   expanded.clear();
-  showList();
+  renderList();
 }
 
-function showList(){
+function renderList(){
   elDetails.style.display = 'none';
   elList.style.display = 'block';
+  elList.innerHTML = '';
 
-  // filter by tab category
-  const filtered = ITEMS.filter(it => getCategory(it) === currentTab);
-  currentList = filtered;
+  const q = (elSearch.value || '').trim().toLowerCase();
 
-  const count = filtered.length;
-  const msg = (count === 0)
-    ? `Weapons: 0\nNo weapons found. Проверь в таблице Items: у оружия category или type должно быть "weapon".`
-    : `Weapons: ${count}`;
-  elStatus.textContent = msg;
-
-  renderList(filtered, elSearch.value.trim());
-}
-
-function renderList(list, q){
-  const qq = q.toLowerCase();
-  const shown = !qq ? list : list.filter(it => {
-    const en = getNameEN(it).toLowerCase();
-    const ru = getNameRU(it).toLowerCase();
-    return en.includes(qq) || ru.includes(qq);
+  const filtered = Array.from(itemsById.values()).filter(it => getCategory(it) === currentTab);
+  const shown = !q ? filtered : filtered.filter(it => {
+    const en = (it.name_en || '').toLowerCase();
+    const ru = (it.name_ru || '').toLowerCase();
+    return en.includes(q) || ru.includes(q);
   });
 
-  elList.innerHTML = '';
+  if (filtered.length === 0){
+    elStatus.textContent = `Weapons: 0\nNo weapons found. Проверь category="weapon" в Items.`;
+  } else {
+    elStatus.textContent = `Weapons: ${shown.length}`;
+  }
+
   for (const it of shown){
     const row = document.createElement('div');
-    row.className = 'row';
-    row.innerHTML = `<div class="rowline">
-        <div class="title">${escapeHtml(labelItem(it))}</div>
-        <div class="tag">${escapeHtml((it.grade ?? it.rank ?? '').toString())}</div>
+    row.className = 'row clickable';
+    row.innerHTML = `
+      <div class="rowline">
+        <div class="left">
+          ${iconHTML(it)}
+          <div class="title">${escapeHtml(labelItem(it))}</div>
+        </div>
+        <div class="tag">${escapeHtml(it.grade || '')}</div>
       </div>`;
-    row.addEventListener('click', () => openDetails(String(it.id).trim()));
+    row.addEventListener('click', () => openDetails(it.id));
     elList.appendChild(row);
   }
 
   if (shown.length === 0){
-    const empty = document.createElement('div');
-    empty.className = 'meta';
-    empty.textContent = 'Nothing found.';
-    elList.appendChild(empty);
+    const hint = document.createElement('div');
+    hint.className = 'meta';
+    hint.textContent = 'Nothing found.';
+    elList.appendChild(hint);
   }
 }
 
-elSearch.addEventListener('input', () => renderList(currentList, elSearch.value.trim()));
+elSearch.addEventListener('input', renderList);
+tabWeapons.addEventListener('click', () => setTab('weapon'));
 
 /* ==========================
-   6) DETAILS + TREE
+   8) Details + Tree
    ========================== */
 function openDetails(itemId){
-  currentItemId = itemId;
-  elList.style.display = 'none';
-  elDetails.style.display = 'block';
+  currentItemId = String(itemId);
   renderDetails();
 }
 
 function renderDetails(){
   const root = itemsById.get(currentItemId);
-  if (!root){
-    elDetails.innerHTML = `<div class="meta">Item not found: ${escapeHtml(currentItemId)}</div>`;
-    return;
-  }
+  if (!root){ showError('Item not found: ' + currentItemId); return; }
+
+  elList.style.display = 'none';
+  elDetails.style.display = 'block';
+
+  const comps = recipeMap.get(currentItemId) || [];
 
   const header = `
     <button class="back" id="btnBack">◀ Back</button>
-    <div class="meta">Components:</div>
-    <div class="row" style="cursor:default;">
+    <div class="meta">Components: ${escapeHtml(labelItem(root))}</div>
+    <div class="row">
       <div class="rowline">
-        <div class="title"><b>${escapeHtml(labelItem(root))}</b></div>
+        <div class="left">
+          ${iconHTML(root)}
+          <div class="title"><b>${escapeHtml(labelItem(root))}</b></div>
+        </div>
         <div class="tag">${escapeHtml(getCategory(root))}</div>
       </div>
     </div>
@@ -380,48 +445,50 @@ function renderDetails(){
   const container = document.createElement('div');
   container.innerHTML = header;
 
-  const treeWrap = document.createElement('div');
-  treeWrap.className = 'indent';
-  container.appendChild(treeWrap);
+  const tree = document.createElement('div');
+  tree.className = 'indent';
+  container.appendChild(tree);
 
-  // root components
-  const comps = recipeMap.get(currentItemId) || [];
-  if (comps.length === 0){
-    treeWrap.innerHTML = `<div class="meta">No recipe for this item.</div>`;
+  if (!comps.length){
+    const none = document.createElement('div');
+    none.className = 'meta';
+    none.textContent = 'No recipe for this item.';
+    tree.appendChild(none);
   } else {
     for (const c of comps){
-      const node = renderNode(c.component_id, c.qty, currentItemId + '>' + c.component_id);
-      treeWrap.appendChild(node);
+      tree.appendChild(renderNode(c.component_id, c.qty, currentItemId + '>' + c.component_id));
     }
     const tip = document.createElement('div');
     tip.className = 'tip';
     tip.textContent = 'Tip: Click ▶ Expand to раскрыть крафт компонента (qty будет умножаться).';
-    treeWrap.appendChild(tip);
+    tree.appendChild(tip);
   }
 
   elDetails.innerHTML = '';
   elDetails.appendChild(container);
 
-  document.getElementById('btnBack').addEventListener('click', () => showList());
+  document.getElementById('btnBack').addEventListener('click', () => setTab(currentTab));
 }
 
 function renderNode(itemId, qty, key){
-  const item = itemsById.get(String(itemId));
-  const craft = item ? isCraftable(item) : false;
+  const it = itemsById.get(String(itemId));
+  const craft = it ? (getCraftable(it) && hasRecipe(it.id)) : false;
 
   const row = document.createElement('div');
   row.className = 'row';
-  row.style.cursor = 'default';
 
-  const btn = craft
+  const btnHtml = craft
     ? `<button class="btn" data-key="${escapeHtml(key)}">${expanded.has(key) ? '▼ Collapse' : '▶ Expand'}</button>`
     : `<span class="tag">base</span>`;
 
   row.innerHTML = `
     <div class="rowline">
-      <div class="title">${escapeHtml(item ? labelItem(item) : ('Unknown ID: ' + itemId))}</div>
+      <div class="left">
+        ${it ? iconHTML(it) : `<span class="icon fallback"></span>`}
+        <div class="title">${escapeHtml(it ? labelItem(it) : ('Unknown ID: ' + itemId))}</div>
+      </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        ${btn}
+        ${btnHtml}
         <div class="qty">x${formatQty(qty)}</div>
       </div>
     </div>
@@ -433,19 +500,22 @@ function renderNode(itemId, qty, key){
   row.appendChild(childrenWrap);
 
   if (craft){
-    const btnEl = row.querySelector('button.btn');
-    btnEl.addEventListener('click', () => {
+    const btn = row.querySelector('button.btn');
+    btn.addEventListener('click', () => {
       if (expanded.has(key)) expanded.delete(key);
       else expanded.add(key);
-      renderDetails(); // simple rerender
+      renderDetails(); // rerender for simplicity
     });
   }
 
-  // if expanded, render children multiplied
+  // expanded children
   if (craft && expanded.has(key)){
     const children = recipeMap.get(String(itemId)) || [];
-    if (children.length === 0){
-      childrenWrap.innerHTML = `<div class="meta">No recipe rows for this craftable item.</div>`;
+    if (!children.length){
+      const m = document.createElement('div');
+      m.className = 'meta';
+      m.textContent = 'No recipe rows for this item.';
+      childrenWrap.appendChild(m);
     } else {
       for (const ch of children){
         const childQty = qty * ch.qty;
@@ -459,53 +529,35 @@ function renderNode(itemId, qty, key){
 }
 
 function formatQty(n){
-  // show integers cleanly
   if (Number.isInteger(n)) return String(n);
   return String(Math.round(n * 1000) / 1000);
 }
 
 /* ==========================
-   7) ESCAPE
-   ========================== */
-function escapeHtml(s){
-  return String(s ?? '')
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'","&#039;");
-}
-
-/* ==========================
-   8) INIT
+   9) Init
    ========================== */
 async function init(){
   try{
-    elStatus.textContent = 'Loading data...';
+    elStatus.textContent = 'Loading Items...';
     ITEMS = await loadCSV(ITEMS_URL);
+
+    elStatus.textContent = 'Loading Recipes...';
     RECIPES = await loadCSV(RECIPES_URL);
 
     buildIndexes();
 
-    // Debug
     console.log('ITEMS:', ITEMS);
     console.log('RECIPES:', RECIPES);
 
+    elStatus.textContent = 'Ready';
     setTab('weapon');
   }catch(e){
     console.error(e);
-    elStatus.textContent = 'ERROR loading CSV. Check URLs / publish as CSV.\n' + e.message;
-    elList.innerHTML = '';
+    showError(e);
   }
 }
 
 init();
-
-/* Telegram */
-try{
-  const tg = window.Telegram.WebApp;
-  tg.ready();
-}catch(e){}
 </script>
 
 </body>
