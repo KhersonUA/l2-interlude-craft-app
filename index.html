@@ -233,6 +233,18 @@
       background:#0f1c36;
       font-weight:700;
     }
+
+    /* Build badge */
+    .build-badge{
+      position:fixed;
+      right:10px;
+      bottom:10px;
+      z-index:9999;
+      font-size:11px;
+      color:#ffffff;
+      opacity:.45;
+      user-select:none;
+    }
   </style>
 </head>
 
@@ -259,8 +271,8 @@
     <div class="toolbar">
       <label>Craft quantity</label>
       <input id="craftQty" type="number" min="1" step="1" value="1"/>
-      <button id="btnTree" class="btn active">TREE VIEW</button>
-      <button id="btnTotal" class="btn">TOTAL MATERIALS</button>
+      <button id="btnTree" class="btn active" type="button">TREE VIEW</button>
+      <button id="btnTotal" class="btn" type="button">TOTAL MATERIALS</button>
       <div class="small" id="iconsInfo"></div>
     </div>
 
@@ -271,6 +283,8 @@
       <div id="totalTableWrap"></div>
     </div>
   </div>
+
+  <div class="build-badge">BUILD: 2026-01-02_02</div>
 
   <script>
     const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
@@ -599,7 +613,6 @@
         `;
       }
 
-      /* ====== FOOTER ROW WITH TOTAL COST ====== */
       html += `
           </tbody>
           <tfoot>
@@ -694,6 +707,24 @@
       refreshCurrentDetails();
     }
 
+    function wireUI(){
+      document.getElementById('searchInput').addEventListener('input', renderWeaponsList);
+      document.getElementById('btnBack').addEventListener('click', showList);
+
+      document.getElementById('btnTree').addEventListener('click', showTree);
+      document.getElementById('btnTotal').addEventListener('click', showTotal);
+
+      document.getElementById('craftQty').addEventListener('input', () => {
+        // only refresh when in details
+        if (currentWeaponId) refreshCurrentDetails();
+      });
+
+      document.getElementById('tabWeapons').addEventListener('click', () => {
+        showList();
+        renderWeaponsList();
+      });
+    }
+
     async function init(){
       loadUserData();
       const status = document.getElementById('statusLine');
@@ -707,6 +738,8 @@
           it.category = String(it.category || '').trim();
           it.craftable = String(it.craftable || '').trim();
           it.icon = String(it.icon || '').trim();
+          it.name_en = String(it.name_en || '').trim();
+          it.name_ru = String(it.name_ru || '').trim();
         });
 
         RECIPES.forEach(r => {
@@ -716,5 +749,27 @@
         });
 
         rebuildIndexes();
+        renderWeaponsList();
+        setIconsInfo();
 
-        console
+        status.textContent = `Ready. Weapons: ${findWeapons().length}  |  Icons: ${iconFilled}/${iconTotal}`;
+      } catch(err){
+        console.error(err);
+        status.textContent = 'Load error: ' + (err?.message || String(err));
+      }
+
+      try{
+        if (window.Telegram && Telegram.WebApp){
+          Telegram.WebApp.ready();
+          Telegram.WebApp.expand();
+        }
+      } catch(e){}
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      wireUI();
+      init();
+    });
+  </script>
+</body>
+</html>
