@@ -288,11 +288,9 @@
   </div>
 
   <script>
-    /* ===================== DATA SOURCES ===================== */
     const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
     const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
 
-    /* ===================== STATE ===================== */
     let ITEMS = [];
     let RECIPES = [];
     const itemsById = new Map();
@@ -315,7 +313,6 @@
     let LANG = 'en';
     const LS_LANG = 'l2_lang_v1';
 
-    /* ===================== I18N ===================== */
     const T = {
       en: {
         weapons: 'Weapons',
@@ -332,7 +329,6 @@
         base: 'BASE',
         direct: 'DIRECT',
         reset: 'Reset have/price',
-        hintExpand: 'Tip: click "Expand" to раскрыть крафт компонента (qty будет умножаться).',
         noRecipe: 'No recipe found for this item.',
         badgeWeapon: 'weapon',
         badgeBase: 'base',
@@ -340,9 +336,6 @@
         expand: 'Expand',
         collapse: 'Collapse',
         summaryCraftQty: 'Craft qty',
-        summaryTotalReq: 'Total required',
-        summaryTotalHave: 'Total have',
-        summaryTotalNeed: 'Total need',
         summaryTotalCost: 'Total cost',
         thMaterial: 'Material',
         thRequired: 'Required',
@@ -351,8 +344,7 @@
         thPrice: 'Price (1)',
         thCost: 'Cost',
         footTotalCost: 'TOTAL COST (ADENA)',
-        langBtn: 'RU',
-        resetConfirm: 'Reset have/price done.'
+        langBtn: 'RU'
       },
       ru: {
         weapons: 'Оружие',
@@ -369,7 +361,6 @@
         base: 'BASE',
         direct: 'DIRECT',
         reset: 'Сброс have/price',
-        hintExpand: 'Подсказка: нажми "Развернуть", чтобы открыть крафт компонента (qty будет умножаться).',
         noRecipe: 'Рецепт для этого предмета не найден.',
         badgeWeapon: 'оружие',
         badgeBase: 'база',
@@ -377,9 +368,6 @@
         expand: 'Развернуть',
         collapse: 'Свернуть',
         summaryCraftQty: 'Кол-во крафта',
-        summaryTotalReq: 'Всего нужно',
-        summaryTotalHave: 'В наличии',
-        summaryTotalNeed: 'Нужно купить',
         summaryTotalCost: 'Общая стоимость',
         thMaterial: 'Материал',
         thRequired: 'Нужно',
@@ -388,8 +376,7 @@
         thPrice: 'Цена (1)',
         thCost: 'Стоимость',
         footTotalCost: 'ИТОГО (АДЕНА)',
-        langBtn: 'EN',
-        resetConfirm: 'Сброс have/price выполнен.'
+        langBtn: 'EN'
       }
     };
 
@@ -413,7 +400,6 @@
       document.getElementById('btnLang').textContent = tr('langBtn');
     }
 
-    /* ===================== CSV PARSER ===================== */
     function parseCSV(text){
       const rows = [];
       let row = [];
@@ -455,7 +441,6 @@
       });
     }
 
-    /* ===================== USER DATA ===================== */
     function loadUserData(){
       try{ HAVE = JSON.parse(localStorage.getItem(LS_HAVE) || '{}') || {}; } catch { HAVE = {}; }
       try{ PRICE = JSON.parse(localStorage.getItem(LS_PRICE) || '{}') || {}; } catch { PRICE = {}; }
@@ -468,7 +453,6 @@
     function savePrice(){ localStorage.setItem(LS_PRICE, JSON.stringify(PRICE)); }
     function saveLang(){ localStorage.setItem(LS_LANG, LANG); }
 
-    /* ===================== INDEXES ===================== */
     function rebuildIndexes(){
       itemsById.clear();
       recipeByItemId.clear();
@@ -490,7 +474,6 @@
       }
     }
 
-    /* ===================== HELPERS ===================== */
     function getDisplayName(it){
       if (!it) return 'Unknown';
       const en = (it.name_en || '').trim();
@@ -505,7 +488,6 @@
     }
 
     function getDisplayNameBoth(it){
-      // used only where you want EN — RU
       if (!it) return 'Unknown';
       const en = (it.name_en || '').trim();
       const ru = (it.name_ru || '').trim();
@@ -553,20 +535,6 @@
       return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
 
-    function badgeForItem(it){
-      const recipe = recipeByItemId.get(String(it?.id)) || [];
-      const canExpand = it && isCraftable(it) && recipe.length > 0;
-      if (!canExpand) return tr('badgeBase');
-      return tr('badgeCraft');
-    }
-
-    /* ===================== RECIPES LOGIC (NO PERCENT) ===================== */
-    // Modes:
-    // - tree: show direct components for selected item, expandable craftables
-    // - total: recursively expand craftables into base materials (default)
-    // - base: same as total (base-only) (kept for your UI)
-    // - direct: no recursive expansion; show only first-level components of selected item
-
     function computeTotalsRecursive(itemId, neededQty, totalsMap){
       const it = itemsById.get(String(itemId));
       const qty = Number(neededQty || 0);
@@ -594,7 +562,6 @@
       }
     }
 
-    /* ===================== RENDER: LIST ===================== */
     function renderWeaponsList(){
       const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
       const listEl = document.getElementById('weaponsList');
@@ -614,7 +581,7 @@
             ${iconOrDot(it)}
             <div class="name">${getDisplayNameBoth(it)}</div>
           </div>
-          <span class="badge">${tr('badgeWeapon')}</span>
+          <span class="badge">${LANG === 'ru' ? 'оружие' : 'weapon'}</span>
         </div>
       `).join('');
 
@@ -623,7 +590,6 @@
       });
     }
 
-    /* ===================== RENDER: TREE ===================== */
     function renderTreeView(){
       const treeEl = document.getElementById('treeView');
       treeEl.innerHTML = '';
@@ -644,7 +610,7 @@
             <div class="name">${weaponName}</div>
           </div>
           <div class="right">
-            <span class="badge">${tr('badgeWeapon')}</span>
+            <span class="badge">${LANG === 'ru' ? 'оружие' : 'weapon'}</span>
             <span class="qty">x${craftQty}</span>
           </div>
         </div>
@@ -664,11 +630,6 @@
         const compQty = Number(row.qty || 0) * craftQty;
         childrenEl.appendChild(renderTreeNode(compId, compQty));
       }
-
-      const hint = document.createElement('div');
-      hint.className = 'hint';
-      hint.textContent = tr('hintExpand');
-      treeEl.appendChild(hint);
     }
 
     function renderTreeNode(itemId, totalQty){
@@ -686,7 +647,7 @@
             <div class="name">${name}</div>
           </div>
           <div class="right">
-            <span class="badge">${canExpand ? tr('badgeCraft') : tr('badgeBase')}</span>
+            <span class="badge">${canExpand ? (LANG==='ru'?'крафт':'craft') : (LANG==='ru'?'база':'base')}</span>
             ${canExpand ? `<button class="expand-btn" type="button">${tr('expand')}</button>` : `<span></span>`}
             <span class="qty">x${totalQty}</span>
           </div>
@@ -717,7 +678,6 @@
       return wrap;
     }
 
-    /* ===================== RENDER: TOTAL (COST TABLE) ===================== */
     function renderTotalView(){
       const craftQty = Math.max(1, Number(document.getElementById('craftQty').value || 1));
       const weapon = itemsById.get(String(currentWeaponId));
@@ -729,11 +689,9 @@
       setIconsInfo();
 
       const totals = new Map();
-
       if (currentMode === 'direct'){
         computeTotalsDirectOnly(String(currentWeaponId), craftQty, totals);
       } else {
-        // total/base both are base-materials recursive
         computeTotalsRecursive(String(currentWeaponId), craftQty, totals);
       }
 
@@ -748,17 +706,12 @@
         })
         .sort((a,b) => getDisplayName(a.it).localeCompare(getDisplayName(b.it)));
 
-      const totalReq = rows.reduce((s,r)=>s+r.req, 0);
-      const totalHave = rows.reduce((s,r)=>s+r.have, 0);
-      const totalNeed = rows.reduce((s,r)=>s+r.need, 0);
       const totalCost = rows.reduce((s,r)=>s+r.cost, 0);
 
+      // SUMMARY: ONLY Craft qty + Total cost
       const sumEl = document.getElementById('costSummary');
       sumEl.innerHTML = `
         <div><div class="k">${tr('summaryCraftQty')}</div><div class="v">x${craftQty}</div></div>
-        <div><div class="k">${tr('summaryTotalReq')}</div><div class="v">${totalReq}</div></div>
-        <div><div class="k">${tr('summaryTotalHave')}</div><div class="v">${totalHave}</div></div>
-        <div><div class="k">${tr('summaryTotalNeed')}</div><div class="v">${totalNeed}</div></div>
         <div><div class="k">${tr('summaryTotalCost')}</div><div class="v">${formatAdena(totalCost)}</div></div>
       `;
 
@@ -847,13 +800,11 @@
       });
     }
 
-    /* ===================== SCREEN REFRESH ===================== */
     function refreshCurrentDetails(){
       if (!currentWeaponId) return;
       const tree = document.getElementById('treeView');
       const total = document.getElementById('totalView');
 
-      // Active button styling
       const bTree = document.getElementById('btnTree');
       const bTotal = document.getElementById('btnTotal');
       const bBase = document.getElementById('btnBase');
@@ -888,7 +839,6 @@
       refreshCurrentDetails();
     }
 
-    /* ===================== EVENTS ===================== */
     function bindEvents(){
       document.getElementById('searchInput').addEventListener('input', renderWeaponsList);
 
@@ -914,7 +864,6 @@
       });
 
       document.getElementById('btnBase').addEventListener('click', () => {
-        // kept for UI parity; behaves as base-only recursive (same as total)
         currentMode = 'base';
         refreshCurrentDetails();
       });
@@ -937,7 +886,6 @@
         saveLang();
         applyI18nStatic();
 
-        // update status line text even on list
         if (!currentWeaponId){
           renderWeaponsList();
         } else {
@@ -945,14 +893,12 @@
         }
       });
 
-      // Top tab (only Weapons for now) — keep it visible always
       document.getElementById('tabWeapons').addEventListener('click', () => {
         showList();
         renderWeaponsList();
       });
     }
 
-    /* ===================== INIT ===================== */
     async function init(){
       loadUserData();
       applyI18nStatic();
