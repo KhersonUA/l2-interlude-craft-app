@@ -262,8 +262,7 @@
     <div class="topbar-left">
       <h1>L2 Interlude Craft Calculator</h1>
       <div class="top-tabs">
-        <button id="tabAll" class="btn active">All</button>
-        <button id="tabWeapons" class="btn">Weapons</button>
+        <button id="tabWeapons" class="btn active">Weapons</button>
         <button id="tabArmors" class="btn">Armors</button>
         <button id="tabJewelry" class="btn">Jewelry</button>
         <button id="tabMaterials" class="btn">Materials</button>
@@ -317,8 +316,8 @@
     const itemsById = new Map();
     const recipeByItemId = new Map();
 
-    // tabs: all | weapon | armor | jewelry | materials
-    let activeCategory = 'all';
+    // tabs: weapon | armor | jewelry | materials
+    let activeCategory = 'weapon';
 
     let currentItemId = null;
 
@@ -339,7 +338,7 @@
 
     const T = {
       en: {
-        tabs: { all:'All', weapon:'Weapons', armor:'Armors', jewelry:'Jewelry', materials:'Materials' },
+        tabs: { weapon:'Weapons', armor:'Armors', jewelry:'Jewelry', materials:'Materials' },
         back: '◀ Back',
         searchPlaceholder: 'Search item',
         loading: 'Loading data...',
@@ -370,7 +369,7 @@
         langBtn: 'RU'
       },
       ru: {
-        tabs: { all:'Все', weapon:'Оружие', armor:'Броня', jewelry:'Бижутерия', materials:'Материалы' },
+        tabs: { weapon:'Оружие', armor:'Броня', jewelry:'Бижутерия', materials:'Материалы' },
         back: '◀ Назад',
         searchPlaceholder: 'Поиск предмета',
         loading: 'Загрузка данных...',
@@ -409,7 +408,6 @@
     function trTab(cat){ return T[LANG].tabs[cat]; }
 
     function applyI18nStatic(){
-      document.getElementById('tabAll').textContent       = trTab('all');
       document.getElementById('tabWeapons').textContent   = trTab('weapon');
       document.getElementById('tabArmors').textContent    = trTab('armor');
       document.getElementById('tabJewelry').textContent   = trTab('jewelry');
@@ -586,10 +584,6 @@
 
     function filterItemsByActiveCategory(){
       const cat = activeCategory;
-
-      if (cat === 'all'){
-        return ITEMS.slice();
-      }
 
       if (cat === 'materials'){
         // ONLY materials that are craftable
@@ -884,7 +878,6 @@
     function setActiveTab(tab){
       activeCategory = tab;
 
-      document.getElementById('tabAll').classList.toggle('active', tab === 'all');
       document.getElementById('tabWeapons').classList.toggle('active', tab === 'weapon');
       document.getElementById('tabArmors').classList.toggle('active', tab === 'armor');
       document.getElementById('tabJewelry').classList.toggle('active', tab === 'jewelry');
@@ -948,7 +941,6 @@
         }
       });
 
-      document.getElementById('tabAll').addEventListener('click', () => setActiveTab('all'));
       document.getElementById('tabWeapons').addEventListener('click', () => setActiveTab('weapon'));
       document.getElementById('tabArmors').addEventListener('click', () => setActiveTab('armor'));
       document.getElementById('tabJewelry').addEventListener('click', () => setActiveTab('jewelry'));
@@ -983,8 +975,8 @@
 
         rebuildIndexes();
 
-        // DEFAULT TAB ON LOAD
-        setActiveTab('all');
+        // default tab on load (as before)
+        setActiveTab('weapon');
       } catch (e){
         console.error(e);
         status.textContent = 'Error loading data. Check console.';
