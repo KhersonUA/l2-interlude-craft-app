@@ -1,227 +1,998 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>L2 Interlude Craft Calculator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>L2 Interlude Craft Calculator</title>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: #e5e7eb;
-}
+  <style>
+    :root{
+      --bg:#0b1220;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --accent:#f59e0b;
+      --border:#2b3a57;
+      --good:#22c55e;
+      --bad:#ef4444;
+    }
+    body{
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin:0;
+      padding:16px;
+    }
+    h1{ font-size:18px; margin:0; }
 
-header {
-  display: flex;
-  gap: 6px;
-  padding: 10px;
-  background: #020617;
-}
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    .topbar-left{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+    .top-tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .topbar-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
 
-.tab {
-  flex: 1;
-  padding: 8px;
-  background: #1e293b;
-  text-align: center;
-  border-radius: 6px;
-  cursor: pointer;
-}
+    .btn{
+      background:#0b1a33;
+      color:var(--text);
+      border:1px solid #36507a;
+      padding:6px 10px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:13px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{ background:#122546; }
+    .btn.active{
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(245,158,11,.25) inset;
+    }
 
-.tab.active {
-  background: #38bdf8;
-  color: #020617;
-  font-weight: bold;
-}
+    .toolbar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:10px 0 12px 0;
+      flex-wrap:wrap;
+    }
+    .toolbar label{
+      font-size:12px;
+      color:var(--muted);
+    }
 
-.lang {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  cursor: pointer;
-}
+    input[type="text"], input[type="number"]{
+      width:100%;
+      padding:10px;
+      font-size:16px;
+      margin:0;
+      border-radius:6px;
+      border:1px solid var(--border);
+      background: #0b1630;
+      color: var(--text);
+      outline:none;
+    }
+    input[type="number"]{
+      width:90px;
+      padding:8px;
+      font-size:14px;
+    }
 
-.container {
-  padding: 10px;
-}
+    .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
 
-.search {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  border: none;
-}
+    .list{ margin-top:10px; }
+    .item-row{
+      background: #13203a;
+      border:1px solid #223455;
+      padding:10px;
+      border-radius:8px;
+      margin-bottom:8px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .item-row:hover{ background:#17284a; }
+    .item-left{ display:flex; align-items:center; gap:10px; min-width:0; }
+    .name{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 900px;
+      font-size:14px;
+    }
+    .badge{
+      font-size:11px;
+      color:var(--muted);
+      border:1px solid var(--border);
+      padding:2px 6px;
+      border-radius:999px;
+      text-transform:lowercase;
+    }
+    .qty{ font-weight:bold; color: var(--accent); margin-left:10px; white-space:nowrap; }
 
-.item {
-  background: #1e293b;
-  border-radius: 6px;
-  padding: 10px;
-  margin-bottom: 8px;
-  cursor: pointer;
-}
+    .icon{
+      width:22px;
+      height:22px;
+      border-radius:6px;
+      object-fit:cover;
+      flex:0 0 auto;
+      background: #0b1630;
+      border:1px solid var(--border);
+    }
+    .dot{
+      width:12px;
+      height:12px;
+      border-radius:999px;
+      background:#334155;
+      border:1px solid #475569;
+      flex:0 0 auto;
+    }
 
-.item-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+    .details-header{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:8px;
+    }
+    .title-small{ font-size:13px; color:var(--muted); }
 
-.item img {
-  width: 32px;
-  height: 32px;
-}
+    .tree, .total{ margin-top:10px; }
 
-.recipe {
-  margin-top: 10px;
-  padding-left: 20px;
-}
+    .node{
+      border:1px solid var(--border);
+      background: #12223f;
+      border-radius:10px;
+      margin:10px 0;
+      overflow:hidden;
+    }
+    .node-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px;
+      background: #132646;
+    }
+    .node-children{
+      padding:8px 10px 12px 22px;
+      border-top:1px solid var(--border);
+      display:none;
+    }
+    .node.open > .node-children{ display:block; }
 
-.row {
-  display: flex;
-  justify-content: space-between;
-  margin: 4px 0;
-}
+    .small{ font-size:12px; color: var(--muted); }
+    .right{ display:flex; align-items:center; gap:12px; white-space:nowrap; }
+    .expand-btn{
+      padding:4px 8px;
+      font-size:12px;
+      border-radius:8px;
+      border:1px solid #36507a;
+      background:#0b1a33;
+      color:var(--text);
+      cursor:pointer;
+    }
+    .expand-btn:hover{ background:#122546; }
 
-input[type="number"] {
-  width: 80px;
-  padding: 4px;
-  border-radius: 4px;
-  border: none;
-}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+      border:1px solid var(--border);
+      overflow:hidden;
+      border-radius:10px;
+    }
+    thead th{
+      background:#132646;
+      color:var(--muted);
+      font-size:12px;
+      text-align:left;
+      padding:10px;
+      border-bottom:1px solid var(--border);
+    }
+    tbody td, tfoot td{
+      padding:10px;
+      border-bottom:1px solid #1f2f4e;
+      vertical-align:middle;
+      font-size:13px;
+    }
+    tbody tr:hover{ background:#12223f; }
 
-.total {
-  margin-top: 10px;
-  font-weight: bold;
-  color: #38bdf8;
-}
-</style>
+    .cell-name{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .cell-name span{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .num{
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+    }
+    .pos{ color: var(--good); font-weight:700; }
+    .neg{ color: var(--bad); font-weight:700; }
+
+    .summary{
+      margin-top:10px;
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#0f1c36;
+      display:flex;
+      flex-wrap:wrap;
+      gap:18px;
+      align-items:center;
+    }
+    .summary .k{ font-size:12px; color:var(--muted); }
+    .summary .v{ font-size:14px; font-weight:700; }
+
+    .tfoot{
+      background:#0f1c36;
+      font-weight:700;
+    }
+  </style>
 </head>
 
 <body>
-
-<header>
-  <div class="tab active" data-tab="all">All</div>
-  <div class="tab" data-tab="weapon">Weapons</div>
-  <div class="tab" data-tab="armor">Armor</div>
-  <div class="tab" data-tab="jewelry">Jewelry</div>
-  <div class="tab" data-tab="material">Materials</div>
-  <div class="lang" id="langBtn">RU</div>
-</header>
-
-<div class="container">
-  <input class="search" id="search" placeholder="Search">
-  <div id="list"></div>
-</div>
-
-<script>
-const ITEMS_URL = 'PASTE_ITEMS_CSV_URL';
-const RECIPES_URL = 'PASTE_RECIPES_CSV_URL';
-
-let ITEMS = [];
-let RECIPES = [];
-let LANG = 'en';
-let TAB = 'all';
-
-async function loadCSV(url) {
-  const r = await fetch(url);
-  const t = await r.text();
-  const lines = t.trim().split('\n');
-  const h = lines[0].split(',');
-  return lines.slice(1).map(l => {
-    const v = l.split(',');
-    const o = {};
-    h.forEach((k,i)=>o[k]=v[i]);
-    return o;
-  });
-}
-
-async function loadData() {
-  ITEMS = await loadCSV(ITEMS_URL);
-  RECIPES = await loadCSV(RECIPES_URL);
-  render();
-}
-
-function render() {
-  const list = document.getElementById('list');
-  const q = document.getElementById('search').value.toLowerCase();
-  list.innerHTML = '';
-
-  ITEMS.filter(i => {
-    if (TAB !== 'all' && i.category !== TAB) return false;
-    const name = LANG === 'en' ? i.name_en : i.name_ru;
-    return name.toLowerCase().includes(q);
-  }).forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'item';
-
-    const name = LANG === 'en' ? item.name_en : item.name_ru;
-
-    div.innerHTML = `
-      <div class="item-header">
-        <img src="${item.icon}">
-        <b>${name}</b>
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>L2 Interlude Craft Calculator</h1>
+      <div class="top-tabs">
+        <button id="tabAll" class="btn active">All</button>
+        <button id="tabWeapons" class="btn">Weapons</button>
+        <button id="tabArmors" class="btn">Armors</button>
+        <button id="tabJewelry" class="btn">Jewelry</button>
+        <button id="tabMaterials" class="btn">Materials</button>
       </div>
-    `;
+    </div>
 
-    const recipe = RECIPES.filter(r => r.result_id === item.id);
-    if (recipe.length) {
-      const rdiv = document.createElement('div');
-      rdiv.className = 'recipe';
+    <div class="topbar-right">
+      <button id="btnLang" class="btn">EN</button>
+    </div>
+  </div>
 
-      recipe.forEach(r => {
-        const comp = ITEMS.find(x => x.id === r.component_id);
-        if (!comp) return;
+  <!-- LIST SCREEN -->
+  <div id="screenList">
+    <input id="searchInput" type="text" placeholder="Search item" />
+    <div class="hint" id="statusLine">Loading data...</div>
+    <div class="list" id="itemsList"></div>
+  </div>
 
-        const cname = LANG === 'en' ? comp.name_en : comp.name_ru;
+  <!-- DETAILS SCREEN -->
+  <div id="screenDetails" style="display:none;">
+    <div class="details-header">
+      <button id="btnBack" class="btn">◀ Back</button>
+      <div class="title-small" id="detailsTitle">Components</div>
+    </div>
 
-        rdiv.innerHTML += `
-          <div class="row">
-            <span>${cname} x${r.count}</span>
-            <input type="number" min="0" value="0" oninput="recalc(this, ${r.count})">
-          </div>
-        `;
-      });
+    <div class="toolbar">
+      <label id="lblCraftQty">Craft quantity</label>
+      <input id="craftQty" type="number" min="1" step="1" value="1"/>
+      <button id="btnTree" class="btn active">TREE VIEW</button>
+      <button id="btnTotal" class="btn">TOTAL MATERIALS</button>
+      <button id="btnBase" class="btn">BASE</button>
+      <button id="btnDirect" class="btn">DIRECT</button>
+      <button id="btnReset" class="btn">Reset have/price</button>
+      <div class="small" id="iconsInfo"></div>
+    </div>
 
-      rdiv.innerHTML += `<div class="total">Total: <span>0</span> Adena</div>`;
-      div.appendChild(rdiv);
+    <div id="treeView" class="tree"></div>
+
+    <div id="totalView" class="total" style="display:none;">
+      <div class="summary" id="costSummary"></div>
+      <div id="totalTableWrap"></div>
+    </div>
+  </div>
+
+  <script>
+    const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
+    const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
+
+    let ITEMS = [];
+    let RECIPES = [];
+    const itemsById = new Map();
+    const recipeByItemId = new Map();
+
+    // tabs: all | weapon | armor | jewelry | materials
+    let activeCategory = 'all';
+
+    let currentItemId = null;
+
+    // modes: tree | total | base | direct
+    let currentMode = 'tree';
+
+    let iconFilled = 0, iconTotal = 0;
+
+    // user data
+    let HAVE = {};
+    let PRICE = {};
+    const LS_HAVE = 'l2_have_v1';
+    const LS_PRICE = 'l2_price_v1';
+
+    // language: 'en' | 'ru'
+    let LANG = 'en';
+    const LS_LANG = 'l2_lang_v1';
+
+    const T = {
+      en: {
+        tabs: { all:'All', weapon:'Weapons', armor:'Armors', jewelry:'Jewelry', materials:'Materials' },
+        back: '◀ Back',
+        searchPlaceholder: 'Search item',
+        loading: 'Loading data...',
+        itemsCount: (n)=>`Items: ${n}`,
+        icons: (f,t)=>`Icons: ${f}/${t}`,
+        components: (name, qty)=>`Components: ${name} (x${qty})`,
+        totalMaterialsTitle: (name, qty)=>`Total materials: ${name} (x${qty})`,
+        craftQty: 'Craft quantity',
+        treeView: 'TREE VIEW',
+        totalMaterials: 'TOTAL MATERIALS',
+        base: 'BASE',
+        direct: 'DIRECT',
+        reset: 'Reset have/price',
+        noRecipe: 'No recipe found for this item.',
+        badgeBase: 'base',
+        badgeCraft: 'craft',
+        expand: 'Expand',
+        collapse: 'Collapse',
+        summaryCraftQty: 'Craft qty',
+        summaryTotalCost: 'Total cost',
+        thMaterial: 'Material',
+        thRequired: 'Required',
+        thHave: 'Have',
+        thNeed: 'Need',
+        thPrice: 'Price (1)',
+        thCost: 'Cost',
+        footTotalCost: 'TOTAL COST (ADENA)',
+        langBtn: 'RU'
+      },
+      ru: {
+        tabs: { all:'Все', weapon:'Оружие', armor:'Броня', jewelry:'Бижутерия', materials:'Материалы' },
+        back: '◀ Назад',
+        searchPlaceholder: 'Поиск предмета',
+        loading: 'Загрузка данных...',
+        itemsCount: (n)=>`Предметы: ${n}`,
+        icons: (f,t)=>`Иконки: ${f}/${t}`,
+        components: (name, qty)=>`Компоненты: ${name} (x${qty})`,
+        totalMaterialsTitle: (name, qty)=>`Итого материалы: ${name} (x${qty})`,
+        craftQty: 'Количество крафта',
+        treeView: 'TREE VIEW',
+        totalMaterials: 'ИТОГО МАТЕРИАЛЫ',
+        base: 'BASE',
+        direct: 'DIRECT',
+        reset: 'Сброс have/price',
+        noRecipe: 'Рецепт для этого предмета не найден.',
+        badgeBase: 'база',
+        badgeCraft: 'крафт',
+        expand: 'Развернуть',
+        collapse: 'Свернуть',
+        summaryCraftQty: 'Кол-во крафта',
+        summaryTotalCost: 'Общая стоимость',
+        thMaterial: 'Материал',
+        thRequired: 'Нужно',
+        thHave: 'Есть',
+        thNeed: 'Купить',
+        thPrice: 'Цена (1)',
+        thCost: 'Стоимость',
+        footTotalCost: 'ИТОГО (АДЕНА)',
+        langBtn: 'EN'
+      }
+    };
+
+    function tr(key, ...args){
+      const v = T[LANG][key];
+      return (typeof v === 'function') ? v(...args) : v;
+    }
+    function trTab(cat){ return T[LANG].tabs[cat]; }
+
+    function applyI18nStatic(){
+      document.getElementById('tabAll').textContent       = trTab('all');
+      document.getElementById('tabWeapons').textContent   = trTab('weapon');
+      document.getElementById('tabArmors').textContent    = trTab('armor');
+      document.getElementById('tabJewelry').textContent   = trTab('jewelry');
+      document.getElementById('tabMaterials').textContent = trTab('materials');
+
+      document.getElementById('btnBack').textContent = tr('back');
+      document.getElementById('searchInput').placeholder = tr('searchPlaceholder');
+
+      document.getElementById('lblCraftQty').textContent = tr('craftQty');
+      document.getElementById('btnTree').textContent = tr('treeView');
+      document.getElementById('btnTotal').textContent = tr('totalMaterials');
+      document.getElementById('btnBase').textContent = tr('base');
+      document.getElementById('btnDirect').textContent = tr('direct');
+      document.getElementById('btnReset').textContent = tr('reset');
+
+      document.getElementById('btnLang').textContent = tr('langBtn');
     }
 
-    list.appendChild(div);
-  });
-}
+    function parseCSV(text){
+      const rows = [];
+      let row = [];
+      let cur = '';
+      let inQuotes = false;
 
-function recalc(input, count) {
-  const recipe = input.closest('.recipe');
-  let total = 0;
-  recipe.querySelectorAll('input').forEach(i => {
-    total += Number(i.value || 0) * count;
-  });
-  recipe.querySelector('.total span').textContent = total;
-}
+      for (let i=0; i<text.length; i++){
+        const ch = text[i];
+        const next = text[i+1];
 
-document.querySelectorAll('.tab').forEach(t => {
-  t.onclick = () => {
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    TAB = t.dataset.tab;
-    render();
-  };
-});
+        if (ch === '"' && inQuotes && next === '"'){ cur += '"'; i++; continue; }
+        if (ch === '"'){ inQuotes = !inQuotes; continue; }
 
-document.getElementById('langBtn').onclick = () => {
-  LANG = LANG === 'en' ? 'ru' : 'en';
-  document.getElementById('langBtn').textContent = LANG.toUpperCase();
-  render();
-};
+        if (ch === ',' && !inQuotes){ row.push(cur); cur=''; continue; }
 
-document.getElementById('search').oninput = render;
+        if ((ch === '\n' || ch === '\r') && !inQuotes){
+          if (ch === '\r' && next === '\n') i++;
+          row.push(cur); cur='';
+          if (row.length > 1 || row[0] !== '') rows.push(row);
+          row = [];
+          continue;
+        }
+        cur += ch;
+      }
+      if (cur.length || row.length){ row.push(cur); rows.push(row); }
+      return rows;
+    }
 
-Telegram.WebApp.ready();
-loadData();
-</script>
+    async function loadCSV(url){
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('CSV fetch failed: ' + res.status + ' ' + url);
+      const text = await res.text();
+      const rows = parseCSV(text.trim());
+      const headers = rows[0].map(h => h.trim());
+      return rows.slice(1).map(cols => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = (cols[i] ?? '').trim());
+        return obj;
+      });
+    }
 
+    function loadUserData(){
+      try{ HAVE = JSON.parse(localStorage.getItem(LS_HAVE) || '{}') || {}; } catch { HAVE = {}; }
+      try{ PRICE = JSON.parse(localStorage.getItem(LS_PRICE) || '{}') || {}; } catch { PRICE = {}; }
+      try{
+        const saved = String(localStorage.getItem(LS_LANG) || '').toLowerCase();
+        if (saved === 'ru' || saved === 'en') LANG = saved;
+      } catch {}
+    }
+    function saveHave(){ localStorage.setItem(LS_HAVE, JSON.stringify(HAVE)); }
+    function savePrice(){ localStorage.setItem(LS_PRICE, JSON.stringify(PRICE)); }
+    function saveLang(){ localStorage.setItem(LS_LANG, LANG); }
+
+    function rebuildIndexes(){
+      itemsById.clear();
+      recipeByItemId.clear();
+      iconFilled = 0; iconTotal = 0;
+
+      for (const it of ITEMS){
+        const id = String(it.id);
+        itemsById.set(id, it);
+        if (it.icon && String(it.icon).trim().length > 0) iconFilled++;
+        iconTotal++;
+      }
+
+      for (const r of RECIPES){
+        const itemId = String(r.item_id);
+        const compId = String(r.component_id);
+        const qty = Number(r.qty || 0);
+        if (!recipeByItemId.has(itemId)) recipeByItemId.set(itemId, []);
+        recipeByItemId.get(itemId).push({ component_id: compId, qty });
+      }
+    }
+
+    function getDisplayName(it){
+      if (!it) return 'Unknown';
+      const en = (it.name_en || '').trim();
+      const ru = (it.name_ru || '').trim();
+      if (LANG === 'ru'){
+        return ru || en || 'Unnamed';
+      } else {
+        return en || ru || 'Unnamed';
+      }
+    }
+
+    function getDisplayNameBoth(it){
+      if (!it) return 'Unknown';
+      const en = (it.name_en || '').trim();
+      const ru = (it.name_ru || '').trim();
+      if (en && ru) return `${en} — ${ru}`;
+      return en || ru || 'Unnamed';
+    }
+
+    function iconOrDot(it){
+      const icon = (it && it.icon) ? String(it.icon).trim() : '';
+      if (icon) return `<img class="icon" src="${icon}" alt="">`;
+      return `<span class="dot"></span>`;
+    }
+
+    function isCraftable(it){
+      return String(it?.craftable || '').toLowerCase() === 'yes';
+    }
+
+    function setIconsInfo(){
+      document.getElementById('iconsInfo').textContent = tr('icons', iconFilled, iconTotal);
+    }
+
+    function showList(){
+      document.getElementById('screenDetails').style.display = 'none';
+      document.getElementById('screenList').style.display = 'block';
+      currentItemId = null;
+    }
+
+    function showDetails(){
+      document.getElementById('screenList').style.display = 'none';
+      document.getElementById('screenDetails').style.display = 'block';
+    }
+
+    function toNonNegInt(s){
+      const cleaned = String(s || '').replace(/[^\d]/g,'');
+      const n = Number(cleaned || 0);
+      return Math.max(0, Math.floor(n));
+    }
+
+    function formatAdena(n){
+      const x = Math.floor(Number(n || 0));
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    function computeTotalsRecursive(itemId, neededQty, totalsMap){
+      const it = itemsById.get(String(itemId));
+      const qty = Number(neededQty || 0);
+      const recipe = recipeByItemId.get(String(itemId)) || [];
+      const expand = it && isCraftable(it) && recipe.length > 0;
+
+      if (!it) return;
+
+      if (!expand){
+        const key = String(itemId);
+        totalsMap.set(key, (totalsMap.get(key) || 0) + qty);
+        return;
+      }
+      for (const row of recipe){
+        computeTotalsRecursive(row.component_id, qty * Number(row.qty || 0), totalsMap);
+      }
+    }
+
+    function computeTotalsDirectOnly(itemId, craftQty, totalsMap){
+      const recipe = recipeByItemId.get(String(itemId)) || [];
+      for (const row of recipe){
+        const key = String(row.component_id);
+        const add = Number(row.qty || 0) * Number(craftQty || 0);
+        totalsMap.set(key, (totalsMap.get(key) || 0) + add);
+      }
+    }
+
+    function filterItemsByActiveCategory(){
+      const cat = activeCategory;
+
+      if (cat === 'all'){
+        return ITEMS.slice();
+      }
+
+      if (cat === 'materials'){
+        // ONLY materials that are craftable
+        return ITEMS.filter(it =>
+          String(it.category || '').toLowerCase() === 'material' &&
+          isCraftable(it)
+        );
+      }
+
+      // weapon | armor | jewelry
+      return ITEMS.filter(it => String(it.category || '').toLowerCase() === cat);
+    }
+
+    function renderItemsList(){
+      const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const listEl = document.getElementById('itemsList');
+
+      const items = filterItemsByActiveCategory().filter(it => {
+        if (!q) return true;
+        const en = (it.name_en || '').toLowerCase();
+        const ru = (it.name_ru || '').toLowerCase();
+        return en.includes(q) || ru.includes(q);
+      });
+
+      document.getElementById('statusLine').textContent =
+        `${tr('itemsCount', items.length)}  |  ${tr('icons', iconFilled, iconTotal)}`;
+
+      listEl.innerHTML = items.map(it => `
+        <div class="item-row" data-id="${String(it.id)}">
+          <div class="item-left">
+            ${iconOrDot(it)}
+            <div class="name">${getDisplayNameBoth(it)}</div>
+          </div>
+          <span class="badge">${String(it.category || '').toLowerCase()}</span>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('.item-row').forEach(row => {
+        row.addEventListener('click', () => openItem(row.getAttribute('data-id')));
+      });
+    }
+
+    function renderTreeView(){
+      const treeEl = document.getElementById('treeView');
+      treeEl.innerHTML = '';
+
+      const craftQty = Math.max(1, Number(document.getElementById('craftQty').value || 1));
+      const item = itemsById.get(String(currentItemId));
+      const itemName = getDisplayName(item);
+
+      document.getElementById('detailsTitle').textContent = tr('components', itemName, craftQty);
+      setIconsInfo();
+
+      const top = document.createElement('div');
+      top.className = 'node open';
+      top.innerHTML = `
+        <div class="node-head">
+          <div class="item-left">
+            ${iconOrDot(item)}
+            <div class="name">${itemName}</div>
+          </div>
+          <div class="right">
+            <span class="badge">${String(item?.category || '').toLowerCase()}</span>
+            <span class="qty">x${craftQty}</span>
+          </div>
+        </div>
+        <div class="node-children"></div>
+      `;
+      treeEl.appendChild(top);
+
+      const childrenEl = top.querySelector('.node-children');
+      const recipe = recipeByItemId.get(String(currentItemId)) || [];
+      if (recipe.length === 0){
+        childrenEl.innerHTML = `<div class="small">${tr('noRecipe')}</div>`;
+        return;
+      }
+
+      for (const row of recipe){
+        const compId = String(row.component_id);
+        const compQty = Number(row.qty || 0) * craftQty;
+        childrenEl.appendChild(renderTreeNode(compId, compQty));
+      }
+    }
+
+    function renderTreeNode(itemId, totalQty){
+      const it = itemsById.get(String(itemId));
+      const name = getDisplayName(it);
+      const recipe = recipeByItemId.get(String(itemId)) || [];
+      const canExpand = it && isCraftable(it) && recipe.length > 0;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'node';
+      wrap.innerHTML = `
+        <div class="node-head">
+          <div class="item-left">
+            ${iconOrDot(it)}
+            <div class="name">${name}</div>
+          </div>
+          <div class="right">
+            <span class="badge">${canExpand ? tr('badgeCraft') : tr('badgeBase')}</span>
+            ${canExpand ? `<button class="expand-btn" type="button">${tr('expand')}</button>` : `<span></span>`}
+            <span class="qty">x${totalQty}</span>
+          </div>
+        </div>
+        <div class="node-children"></div>
+      `;
+
+      if (canExpand){
+        const btn = wrap.querySelector('.expand-btn');
+        const childrenEl = wrap.querySelector('.node-children');
+
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const openNow = wrap.classList.toggle('open');
+          btn.textContent = openNow ? tr('collapse') : tr('expand');
+
+          if (openNow && childrenEl.childElementCount === 0){
+            for (const r of recipe){
+              const cid = String(r.component_id);
+              const cqty = totalQty * Number(r.qty || 0);
+              childrenEl.appendChild(renderTreeNode(cid, cqty));
+            }
+          }
+        });
+      }
+      return wrap;
+    }
+
+    function renderTotalView(){
+      const craftQty = Math.max(1, Number(document.getElementById('craftQty').value || 1));
+      const item = itemsById.get(String(currentItemId));
+      const itemName = getDisplayName(item);
+
+      document.getElementById('detailsTitle').textContent =
+        tr('totalMaterialsTitle', itemName, craftQty);
+
+      setIconsInfo();
+
+      const totals = new Map();
+      if (currentMode === 'direct'){
+        computeTotalsDirectOnly(String(currentItemId), craftQty, totals);
+      } else {
+        computeTotalsRecursive(String(currentItemId), craftQty, totals);
+      }
+
+      const rows = Array.from(totals.entries())
+        .map(([id, req]) => {
+          const it = itemsById.get(String(id));
+          const have = Number(HAVE[id] || 0);
+          const need = Math.max(0, Number(req) - have);
+          const price = Number(PRICE[id] || 0);
+          const cost = need * price;
+          return { id, it, req: Number(req), have, need, price, cost };
+        })
+        .sort((a,b) => getDisplayName(a.it).localeCompare(getDisplayName(b.it)));
+
+      const totalCost = rows.reduce((s,r)=>s+r.cost, 0);
+
+      // SUMMARY: ONLY Craft qty + Total cost
+      const sumEl = document.getElementById('costSummary');
+      sumEl.innerHTML = `
+        <div><div class="k">${tr('summaryCraftQty')}</div><div class="v">x${craftQty}</div></div>
+        <div><div class="k">${tr('summaryTotalCost')}</div><div class="v">${formatAdena(totalCost)}</div></div>
+      `;
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>${tr('thMaterial')}</th>
+              <th class="num">${tr('thRequired')}</th>
+              <th class="num">${tr('thHave')}</th>
+              <th class="num">${tr('thNeed')}</th>
+              <th class="num">${tr('thPrice')}</th>
+              <th class="num">${tr('thCost')}</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      for (const r of rows){
+        const needCls = r.need > 0 ? 'neg' : 'pos';
+        html += `
+          <tr data-id="${r.id}">
+            <td>
+              <div class="cell-name">
+                ${iconOrDot(r.it)}
+                <span>${getDisplayName(r.it)}</span>
+              </div>
+            </td>
+            <td class="num">${r.req}</td>
+            <td class="num">
+              <input class="haveInput" type="text" inputmode="numeric" value="${String(r.have)}"
+                     style="width:110px; padding:6px; font-size:13px;">
+            </td>
+            <td class="num ${needCls}">${r.need}</td>
+            <td class="num">
+              <input class="priceInput" type="text" inputmode="numeric" value="${String(r.price)}"
+                     style="width:110px; padding:6px; font-size:13px;">
+            </td>
+            <td class="num">${formatAdena(r.cost)}</td>
+          </tr>
+        `;
+      }
+
+      html += `
+          </tbody>
+          <tfoot>
+            <tr class="tfoot">
+              <td colspan="5" class="num">${tr('footTotalCost')}</td>
+              <td class="num">${formatAdena(totalCost)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      `;
+
+      document.getElementById('totalTableWrap').innerHTML = html;
+
+      document.querySelectorAll('#totalTableWrap tr[data-id]').forEach(trEl => {
+        const id = trEl.getAttribute('data-id');
+        const haveInput = trEl.querySelector('.haveInput');
+        const priceInput = trEl.querySelector('.priceInput');
+
+        const commitHave = () => {
+          const v = toNonNegInt(haveInput.value);
+          HAVE[id] = v;
+          saveHave();
+          renderTotalView();
+        };
+        const commitPrice = () => {
+          const v = toNonNegInt(priceInput.value);
+          PRICE[id] = v;
+          savePrice();
+          renderTotalView();
+        };
+
+        haveInput.addEventListener('change', commitHave);
+        priceInput.addEventListener('change', commitPrice);
+        haveInput.addEventListener('blur', commitHave);
+        priceInput.addEventListener('blur', commitPrice);
+
+        haveInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter'){ e.preventDefault(); commitHave(); }
+        });
+        priceInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter'){ e.preventDefault(); commitPrice(); }
+        });
+      });
+    }
+
+    function refreshCurrentDetails(){
+      if (!currentItemId) return;
+      const tree = document.getElementById('treeView');
+      const total = document.getElementById('totalView');
+
+      const bTree = document.getElementById('btnTree');
+      const bTotal = document.getElementById('btnTotal');
+      const bBase = document.getElementById('btnBase');
+      const bDirect = document.getElementById('btnDirect');
+
+      bTree.classList.remove('active');
+      bTotal.classList.remove('active');
+      bBase.classList.remove('active');
+      bDirect.classList.remove('active');
+
+      if (currentMode === 'tree'){
+        bTree.classList.add('active');
+        tree.style.display = 'block';
+        total.style.display = 'none';
+        renderTreeView();
+      } else {
+        tree.style.display = 'none';
+        total.style.display = 'block';
+
+        if (currentMode === 'total') bTotal.classList.add('active');
+        if (currentMode === 'base') bBase.classList.add('active');
+        if (currentMode === 'direct') bDirect.classList.add('active');
+
+        renderTotalView();
+      }
+    }
+
+    function openItem(id){
+      currentItemId = String(id);
+      showDetails();
+      currentMode = 'tree';
+      refreshCurrentDetails();
+    }
+
+    function setActiveTab(tab){
+      activeCategory = tab;
+
+      document.getElementById('tabAll').classList.toggle('active', tab === 'all');
+      document.getElementById('tabWeapons').classList.toggle('active', tab === 'weapon');
+      document.getElementById('tabArmors').classList.toggle('active', tab === 'armor');
+      document.getElementById('tabJewelry').classList.toggle('active', tab === 'jewelry');
+      document.getElementById('tabMaterials').classList.toggle('active', tab === 'materials');
+
+      showList();
+      renderItemsList();
+    }
+
+    function bindEvents(){
+      document.getElementById('searchInput').addEventListener('input', renderItemsList);
+
+      document.getElementById('btnBack').addEventListener('click', () => {
+        showList();
+        renderItemsList();
+      });
+
+      document.getElementById('craftQty').addEventListener('change', () => {
+        const v = Math.max(1, toNonNegInt(document.getElementById('craftQty').value));
+        document.getElementById('craftQty').value = v;
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnTree').addEventListener('click', () => {
+        currentMode = 'tree';
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnTotal').addEventListener('click', () => {
+        currentMode = 'total';
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnBase').addEventListener('click', () => {
+        currentMode = 'base';
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnDirect').addEventListener('click', () => {
+        currentMode = 'direct';
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnReset').addEventListener('click', () => {
+        HAVE = {};
+        PRICE = {};
+        saveHave();
+        savePrice();
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnLang').addEventListener('click', () => {
+        LANG = (LANG === 'en') ? 'ru' : 'en';
+        saveLang();
+        applyI18nStatic();
+
+        if (!currentItemId){
+          renderItemsList();
+        } else {
+          refreshCurrentDetails();
+        }
+      });
+
+      document.getElementById('tabAll').addEventListener('click', () => setActiveTab('all'));
+      document.getElementById('tabWeapons').addEventListener('click', () => setActiveTab('weapon'));
+      document.getElementById('tabArmors').addEventListener('click', () => setActiveTab('armor'));
+      document.getElementById('tabJewelry').addEventListener('click', () => setActiveTab('jewelry'));
+      document.getElementById('tabMaterials').addEventListener('click', () => setActiveTab('materials'));
+    }
+
+    async function init(){
+      loadUserData();
+      applyI18nStatic();
+
+      const status = document.getElementById('statusLine');
+      status.textContent = tr('loading');
+
+      try{
+        ITEMS = await loadCSV(ITEMS_URL);
+        RECIPES = await loadCSV(RECIPES_URL);
+
+        ITEMS.forEach(it => {
+          it.id = String(it.id || '').trim();
+          it.category = String(it.category || '').trim().toLowerCase();
+          it.craftable = String(it.craftable || '').trim();
+          it.icon = String(it.icon || '').trim();
+          it.name_en = String(it.name_en || '').trim();
+          it.name_ru = String(it.name_ru || '').trim();
+        });
+
+        RECIPES.forEach(r => {
+          r.item_id = String(r.item_id || '').trim();
+          r.component_id = String(r.component_id || '').trim();
+          r.qty = String(r.qty || '').trim();
+        });
+
+        rebuildIndexes();
+
+        // DEFAULT TAB ON LOAD
+        setActiveTab('all');
+      } catch (e){
+        console.error(e);
+        status.textContent = 'Error loading data. Check console.';
+      }
+    }
+
+    bindEvents();
+    init();
+  </script>
 </body>
 </html>
