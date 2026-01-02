@@ -4,189 +4,1057 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>L2 Interlude Craft Calculator</title>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
     :root{
-      --bg:#0f172a; --card:#1e293b; --card2:#24344d; --text:#e5e7eb; --muted:#9ca3af;
-      --accent:#fbbf24; --line:#334155; --btn:#0b1223; --btn2:#0a1020; --chip:#0b1a36;
+      --bg:#0f172a;
+      --panel:#111c33;
+      --card:#1e293b;
+      --card2:#24344d;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --accent:#fbbf24;
+      --line:#334155;
+      --btn:#0b1223;
+      --btn2:#0a1020;
+      --chip:#0b1a36;
+      --ok:#22c55e;
+      --bad:#ef4444;
     }
-    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:16px}
-    h1{font-size:18px;margin:0 0 12px 0;font-weight:700}
-    .topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-    .spacer{flex:1}
-    .btn{background:var(--btn);color:var(--text);border:1px solid var(--line);padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px}
-    .btn:hover{background:var(--btn2)}
-    .btn.primary{border-color:var(--accent)}
-    .btn.active{border-color:var(--accent);box-shadow:0 0 0 1px rgba(251,191,36,.25) inset}
-    .input{width:100%;padding:10px;font-size:14px;margin:8px 0 12px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,0.04);color:var(--text);outline:none}
-    .muted{color:var(--muted);font-size:12px}
-    .list .item{background:var(--card);padding:10px;border-radius:10px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid rgba(255,255,255,.06)}
-    .list .item:hover{background:var(--card2)}
-    .left{display:flex;align-items:center;gap:10px;min-width:0}
-    .ico{width:22px;height:22px;border-radius:6px;background:#0b1223;border:1px solid rgba(255,255,255,.08);object-fit:cover;flex:0 0 auto}
-    .title{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .chip{background:var(--chip);border:1px solid rgba(255,255,255,.08);padding:3px 8px;border-radius:999px;font-size:12px;color:var(--muted);text-transform:lowercase}
-    .build{position:fixed;right:10px;bottom:10px;opacity:.45;font-size:11px;z-index:9999}
+    body{
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+    }
+    h1{ font-size: 18px; margin: 0 0 12px 0; font-weight: 700; }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .spacer{ flex:1; }
+
+    .btn{
+      background: var(--btn);
+      color: var(--text);
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor:pointer;
+      font-size: 13px;
+      user-select:none;
+    }
+    .btn:hover{ background: var(--btn2); }
+    .btn.primary{ border-color: var(--accent); }
+    .btn.active{
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(251,191,36,0.25) inset;
+    }
+    .btn.small{ padding:6px 8px; font-size:12px; }
+
+    .input{
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      margin: 8px 0 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      outline: none;
+    }
+    .muted{ color: var(--muted); font-size: 12px; }
+
+    .list{ margin-top: 10px; }
+    .item{
+      background: var(--card);
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border:1px solid rgba(255,255,255,0.06);
+    }
+    .item:hover{ background: var(--card2); }
+
+    .left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
+    }
+    .ico{
+      width:22px;height:22px;
+      border-radius:6px;
+      background:#0b1223;
+      border:1px solid rgba(255,255,255,0.08);
+      flex:0 0 auto;
+      object-fit:cover;
+    }
+    .title{
+      font-size: 13px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .chip{
+      background: var(--chip);
+      border:1px solid rgba(255,255,255,0.08);
+      padding: 3px 8px;
+      border-radius:999px;
+      font-size:12px;
+      color: var(--muted);
+      text-transform: lowercase;
+      white-space:nowrap;
+    }
+
+    .hidden{ display:none; }
+
+    .panel{
+      background: rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .details-header{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .tree{
+      margin-top: 10px;
+    }
+
+    .node{
+      border:1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      margin: 10px 0;
+      overflow:hidden;
+    }
+    .node-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px;
+      background: rgba(255,255,255,0.03);
+    }
+    .node-children{
+      border-top:1px solid rgba(255,255,255,0.08);
+      padding: 10px 10px 12px 22px;
+      display:none;
+    }
+    .node.open > .node-children{ display:block; }
+
+    .right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      white-space:nowrap;
+      flex:0 0 auto;
+      color: var(--muted);
+      font-size:12px;
+    }
+    .qty{
+      color: var(--accent);
+      font-weight:700;
+      font-size: 13px;
+    }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      border-radius: 12px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.08);
+    }
+    thead th{
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align:left;
+    }
+    tbody td, tfoot td{
+      padding: 8px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 12px;
+      vertical-align: middle;
+      background: rgba(255,255,255,0.02);
+    }
+    tbody tr:hover td{ background: rgba(255,255,255,0.03); }
+    tfoot td{
+      background: rgba(255,255,255,0.04);
+      font-weight: 800;
+    }
+
+    .cell-name{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .cell-name span{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .num{
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+    }
+    .num.bad{ color: var(--bad); font-weight: 800; }
+    .num.ok{ color: var(--ok); font-weight: 800; }
+
+    .cell-input{
+      width: 110px;
+      padding: 6px 6px;
+      border-radius: 8px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      outline:none;
+      font-size: 12px;
+    }
+
+    .summary{
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.08);
+      display:flex;
+      flex-wrap:wrap;
+      gap:18px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .summary .k{ font-size:12px; color:var(--muted); }
+    .summary .v{ font-size:14px; font-weight: 800; color: var(--accent); }
+
+    .build{
+      position:fixed;
+      right:10px;
+      bottom:10px;
+      z-index:9999;
+      font-size:11px;
+      color:#fff;
+      opacity:.45;
+      user-select:none;
+    }
   </style>
 </head>
 
 <body>
   <h1>L2 Interlude Craft Calculator</h1>
 
-  <div class="topbar">
-    <button class="btn" id="tabAll">All</button>
-    <button class="btn" id="tabWeapons">Weapons</button>
-    <button class="btn" id="tabArmor">Armor</button>
-    <button class="btn" id="tabJewelry">Jewelry</button>
-    <button class="btn" id="tabOther">Other</button>
+  <!-- LIST VIEW -->
+  <div id="viewList">
+    <div class="topbar">
+      <button class="btn" id="tabAll">All</button>
+      <button class="btn" id="tabWeapons">Weapons</button>
+      <button class="btn" id="tabArmor">Armor</button>
+      <button class="btn" id="tabJewelry">Jewelry</button>
+      <button class="btn" id="tabOther">Other</button>
 
-    <div class="spacer"></div>
+      <div class="spacer"></div>
 
-    <button class="btn primary" id="btnLang">RU</button>
-    <span class="muted" id="statusLine">Loading...</span>
+      <button class="btn primary" id="btnLang">RU</button>
+      <span class="muted" id="statusLine">Loading...</span>
+    </div>
+
+    <input class="input" id="searchInput" type="text" placeholder="Search (Arcana / Аркана)"/>
+    <div class="muted" id="countLine"></div>
+
+    <div class="list" id="itemsList"></div>
   </div>
 
-  <input class="input" id="searchInput" type="text" placeholder="Search (Arcana / Аркана)" />
-  <div class="muted" id="countLine"></div>
-  <div class="list" id="itemsList"></div>
+  <!-- DETAILS VIEW -->
+  <div id="viewDetails" class="hidden">
+    <div class="details-header">
+      <button class="btn" id="btnBack">◀ Back</button>
+      <div class="muted" id="detailsTitle"></div>
+      <div class="spacer"></div>
+      <button class="btn primary" id="btnLang2">RU</button>
+    </div>
 
-  <div class="build">BUILD: 2026-01-02_UI_TEST</div>
+    <div class="panel">
+      <div class="row" style="margin-bottom:10px;">
+        <span class="muted" id="lblCraftQty">Craft quantity</span>
+        <input class="cell-input" id="craftQty" inputmode="numeric" autocomplete="off" value="1" />
+
+        <button class="btn small active" id="btnTree" type="button">TREE VIEW</button>
+        <button class="btn small" id="btnTotal" type="button">TOTAL MATERIALS</button>
+
+        <button class="btn small primary" id="btnModeBase" type="button">BASE</button>
+        <button class="btn small" id="btnModeDirect" type="button">DIRECT</button>
+
+        <button class="btn small" id="btnReset" type="button">Reset have/price</button>
+
+        <span class="muted" id="iconsInfo"></span>
+      </div>
+
+      <div id="treeView" class="tree"></div>
+
+      <div id="totalView" class="hidden">
+        <div class="summary" id="costSummary"></div>
+        <div id="totalTableWrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="build">BUILD: 2026-01-02_FULL_NO_PERCENT</div>
 
   <script>
+    /***********************************************************
+     * ОЖИДАЕМЫЕ КОЛОНКИ:
+     * ITEMS:   id, name_en, name_ru, category, craftable, icon
+     * RECIPES: item_id, component_id, qty
+     *
+     * ВАЖНО: проценты (60%/100%) НЕ используются и НЕ влияют на qty.
+     ***********************************************************/
+
     const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
     const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
 
-    let ITEMS=[], RECIPES=[];
-    let lang = localStorage.getItem('l2_lang') || 'ru';
-    let activeTab = localStorage.getItem('l2_tab') || 'weapons';
+    const LS_KEY_LANG   = 'l2_lang_v2';
+    const LS_KEY_TAB    = 'l2_tab_v2';
+    const LS_HAVE       = 'l2_have_v2';
+    const LS_PRICE      = 'l2_price_v2';
+
+    let lang = localStorage.getItem(LS_KEY_LANG) || 'ru';
+    let activeTab = localStorage.getItem(LS_KEY_TAB) || 'weapons';
+
+    let ITEMS = [];
+    let RECIPES = [];
+
+    const itemsById = new Map();         // id -> item
+    const childrenByItemId = new Map();  // item_id -> [{component_id, qty}]
+    let currentItemId = null;
+
+    // modes:
+    // view: tree / total
+    let viewMode = 'tree';
+    // total calc: base / direct
+    let totalMode = 'base';
+
+    let HAVE = {};
+    let PRICE = {};
 
     function parseCSVLine(line){
-      const out=[]; let cur=''; let inQ=false;
-      for(let i=0;i<line.length;i++){
-        const ch=line[i];
-        if(ch === '"'){ if(inQ && line[i+1]==='"'){cur+='"'; i++;} else inQ=!inQ; continue; }
-        if(ch === ',' && !inQ){ out.push(cur); cur=''; continue; }
+      const out = [];
+      let cur = '';
+      let inQ = false;
+      for (let i=0;i<line.length;i++){
+        const ch = line[i];
+        if (ch === '"'){
+          if (inQ && line[i+1] === '"'){ cur += '"'; i++; }
+          else inQ = !inQ;
+          continue;
+        }
+        if (ch === ',' && !inQ){
+          out.push(cur);
+          cur = '';
+          continue;
+        }
         cur += ch;
       }
       out.push(cur);
-      return out.map(s=>s.trim());
+      return out.map(s => s.trim());
     }
+
     async function loadCSV(url){
-      const res = await fetch(url, {cache:'no-store'});
-      if(!res.ok) throw new Error('CSV fetch failed: '+res.status);
+      const res = await fetch(url, { cache:'no-store' });
+      if (!res.ok) throw new Error('CSV fetch failed: ' + res.status);
       const text = await res.text();
       const lines = text.replace(/\r/g,'').trim().split('\n');
       const headers = parseCSVLine(lines[0]);
       return lines.slice(1).filter(Boolean).map(line=>{
         const vals = parseCSVLine(line);
-        const obj={};
-        headers.forEach((h,i)=>obj[h]= (vals[i]??'').trim());
+        const obj = {};
+        headers.forEach((h,i)=> obj[h] = (vals[i] ?? '').trim());
         return obj;
       });
     }
-    function cleanPercent(s){ return String(s||'').replace(/\s*\(\s*\d+\s*%\s*\)\s*/g,' ').replace(/\s+/g,' ').trim(); }
-    function label(it){
-      const en=cleanPercent(it.name_en||''); const ru=cleanPercent(it.name_ru||'');
-      if(lang==='en') return en || ru || ('#'+it.id);
-      return ru || en || ('#'+it.id);
+
+    function toInt(x, def=0){
+      const n = parseInt(String(x ?? '').replace(/[^\d-]/g,''), 10);
+      return Number.isFinite(n) ? n : def;
     }
+
+    function toNonNegIntInputValue(raw){
+      const cleaned = String(raw ?? '').replace(/[^\d]/g,'');
+      const n = parseInt(cleaned || '0', 10);
+      return Number.isFinite(n) ? Math.max(0, n) : 0;
+    }
+
+    function cleanPercentInName(s){
+      // убираем "(60%)" "(100%)" и подобное, если где-то в названии попадётся
+      return String(s ?? '')
+        .replace(/\s*\(\s*\d+\s*%\s*\)\s*/g, ' ')
+        .replace(/\s+/g,' ')
+        .trim();
+    }
+
+    function label(it){
+      const en = cleanPercentInName(it?.name_en || '');
+      const ru = cleanPercentInName(it?.name_ru || '');
+      if (lang === 'en') return en || ru || `#${it?.id ?? '?'}`;
+      return ru || en || `#${it?.id ?? '?'}`;
+    }
+
     function makeImg(src){
-      const img=document.createElement('img');
-      img.className='ico'; img.src=src||''; img.alt='';
-      img.onerror=()=>{img.style.visibility='hidden';};
+      const img = document.createElement('img');
+      img.className = 'ico';
+      img.alt = '';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = src || '';
+      img.onerror = () => { img.style.visibility = 'hidden'; };
       return img;
     }
 
-    function isWeapon(it){ return (it.category||'').toLowerCase()==='weapon'; }
+    function isCraftable(it){
+      return String(it?.craftable || '').toLowerCase() === 'yes';
+    }
+
+    function getChildren(itemId){
+      return childrenByItemId.get(String(itemId)) || [];
+    }
+
+    function buildIndexes(){
+      itemsById.clear();
+      childrenByItemId.clear();
+
+      let iconFilled = 0;
+      for (const it of ITEMS){
+        it.id = String(it.id || '').trim();
+        it.name_en = String(it.name_en || '').trim();
+        it.name_ru = String(it.name_ru || '').trim();
+        it.category = String(it.category || '').trim().toLowerCase();
+        it.craftable = String(it.craftable || '').trim().toLowerCase();
+        it.icon = String(it.icon || '').trim();
+
+        itemsById.set(it.id, it);
+        if (it.icon) iconFilled++;
+      }
+
+      for (const r of RECIPES){
+        const item_id = String(r.item_id || '').trim();
+        const component_id = String(r.component_id || '').trim();
+        const qty = toInt(r.qty, 0);
+        if (!item_id || !component_id || !qty) continue;
+        if (!childrenByItemId.has(item_id)) childrenByItemId.set(item_id, []);
+        childrenByItemId.get(item_id).push({ component_id, qty });
+      }
+
+      document.getElementById('iconsInfo').textContent = `Icons: ${iconFilled}/${ITEMS.length}`;
+    }
+
+    function loadUserData(){
+      try{ HAVE = JSON.parse(localStorage.getItem(LS_HAVE) || '{}') || {}; } catch { HAVE = {}; }
+      try{ PRICE = JSON.parse(localStorage.getItem(LS_PRICE) || '{}') || {}; } catch { PRICE = {}; }
+    }
+    function saveHave(){ localStorage.setItem(LS_HAVE, JSON.stringify(HAVE)); }
+    function savePrice(){ localStorage.setItem(LS_PRICE, JSON.stringify(PRICE)); }
+
+    function resetHavePrice(){
+      HAVE = {};
+      PRICE = {};
+      saveHave();
+      savePrice();
+      if (viewMode === 'total' && currentItemId) renderTotalView();
+    }
+
+    function getHave(id){ return toNonNegIntInputValue(HAVE[String(id)] ?? 0); }
+    function getPrice(id){ return toNonNegIntInputValue(PRICE[String(id)] ?? 0); }
+
+    function formatAdena(n){
+      const x = Math.floor(Number(n || 0));
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    // CATEGORY GROUPS (гибко)
+    function isWeapon(it){
+      return (it.category || '') === 'weapon';
+    }
     function isArmor(it){
-      const c=(it.category||'').toLowerCase();
-      return c.includes('armor')||c.includes('helmet')||c.includes('gloves')||c.includes('boots')||c.includes('shield');
+      const c = it.category || '';
+      return c.includes('armor') || c.includes('helmet') || c.includes('gloves') || c.includes('boots') || c.includes('shield') || c.includes('sigil');
     }
     function isJewelry(it){
-      const c=(it.category||'').toLowerCase();
-      return c.includes('jewel')||c.includes('ring')||c.includes('ear')||c.includes('necklace')||c.includes('accessor');
+      const c = it.category || '';
+      return c.includes('jewel') || c.includes('ring') || c.includes('ear') || c.includes('necklace') || c.includes('accessor');
     }
-    function isOther(it){ return !isWeapon(it)&&!isArmor(it)&&!isJewelry(it); }
-
+    function isOther(it){
+      return !isWeapon(it) && !isArmor(it) && !isJewelry(it);
+    }
     function tabFilter(it){
-      if(activeTab==='all') return true;
-      if(activeTab==='weapons') return isWeapon(it);
-      if(activeTab==='armor') return isArmor(it);
-      if(activeTab==='jewelry') return isJewelry(it);
-      if(activeTab==='other') return isOther(it);
+      if (activeTab === 'all') return true;
+      if (activeTab === 'weapons') return isWeapon(it);
+      if (activeTab === 'armor') return isArmor(it);
+      if (activeTab === 'jewelry') return isJewelry(it);
+      if (activeTab === 'other') return isOther(it);
       return true;
     }
 
+    // LIST показывает только craftable предметы (чтобы материалы не забивали список)
+    function listEligibility(it){
+      return isCraftable(it);
+    }
+
     function setActiveTab(tab){
-      activeTab=tab; localStorage.setItem('l2_tab',tab);
-      ['tabAll','tabWeapons','tabArmor','tabJewelry','tabOther'].forEach(id=>document.getElementById(id).classList.remove('active'));
-      const map={all:'tabAll',weapons:'tabWeapons',armor:'tabArmor',jewelry:'tabJewelry',other:'tabOther'};
+      activeTab = tab;
+      localStorage.setItem(LS_KEY_TAB, activeTab);
+
+      const ids = ['tabAll','tabWeapons','tabArmor','tabJewelry','tabOther'];
+      ids.forEach(id => document.getElementById(id).classList.remove('active'));
+
+      const map = { all:'tabAll', weapons:'tabWeapons', armor:'tabArmor', jewelry:'tabJewelry', other:'tabOther' };
       document.getElementById(map[tab]).classList.add('active');
+
       renderList();
+    }
+
+    function refreshLangButtons(){
+      document.getElementById('btnLang').textContent = lang.toUpperCase();
+      document.getElementById('btnLang2').textContent = lang.toUpperCase();
+
+      document.getElementById('searchInput').placeholder =
+        (lang === 'ru') ? 'Поиск (Arcana / Аркана)' : 'Search (Arcana / Аркана)';
+
+      document.getElementById('lblCraftQty').textContent =
+        (lang === 'ru') ? 'Количество крафта' : 'Craft quantity';
+
+      document.getElementById('btnTree').textContent = 'TREE VIEW';
+      document.getElementById('btnTotal').textContent = (lang === 'ru') ? 'ИТОГО МАТЕРИАЛЫ' : 'TOTAL MATERIALS';
+
+      document.getElementById('btnReset').textContent = (lang === 'ru') ? 'Сброс have/price' : 'Reset have/price';
+
+      document.getElementById('btnModeBase').textContent = 'BASE';
+      document.getElementById('btnModeDirect').textContent = 'DIRECT';
     }
 
     function toggleLang(){
-      lang = (lang==='ru')?'en':'ru';
-      localStorage.setItem('l2_lang',lang);
-      document.getElementById('btnLang').textContent = lang.toUpperCase();
+      lang = (lang === 'ru') ? 'en' : 'ru';
+      localStorage.setItem(LS_KEY_LANG, lang);
+      refreshLangButtons();
       renderList();
+      if (currentItemId){
+        renderDetailsTitle();
+        if (viewMode === 'tree') renderTreeView();
+        else renderTotalView();
+      }
+    }
+
+    function showList(){
+      document.getElementById('viewList').classList.remove('hidden');
+      document.getElementById('viewDetails').classList.add('hidden');
+      currentItemId = null;
+    }
+
+    function showDetails(itemId){
+      currentItemId = String(itemId);
+      document.getElementById('viewList').classList.add('hidden');
+      document.getElementById('viewDetails').classList.remove('hidden');
+
+      // defaults
+      viewMode = 'tree';
+      document.getElementById('btnTree').classList.add('active');
+      document.getElementById('btnTotal').classList.remove('active');
+
+      renderDetailsTitle();
+      renderTreeView();
+      refreshLangButtons();
+    }
+
+    function renderDetailsTitle(){
+      const it = itemsById.get(String(currentItemId));
+      const qty = Math.max(1, toNonNegIntInputValue(document.getElementById('craftQty').value));
+      document.getElementById('craftQty').value = String(qty);
+      document.getElementById('detailsTitle').textContent =
+        (viewMode === 'tree')
+          ? ((lang === 'ru') ? `Компоненты: ${label(it)} (x${qty})` : `Components: ${label(it)} (x${qty})`)
+          : ((lang === 'ru') ? `Итог: ${label(it)} (x${qty})` : `Total: ${label(it)} (x${qty})`);
     }
 
     function renderList(){
-      const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
-      const list=document.getElementById('itemsList'); list.innerHTML='';
+      const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const list = document.getElementById('itemsList');
+      list.innerHTML = '';
+
       const filtered = ITEMS
         .filter(tabFilter)
-        .filter(it => String(it.craftable||'').toLowerCase()==='yes') // чтобы материалы не забивали список
+        .filter(listEligibility)
         .filter(it => {
-          if(!q) return true;
+          if (!q) return true;
           const s = `${it.name_en||''} ${it.name_ru||''}`.toLowerCase();
           return s.includes(q);
         });
 
-      document.getElementById('countLine').textContent = (lang==='ru') ? `Предметов: ${filtered.length}` : `Items: ${filtered.length}`;
+      document.getElementById('countLine').textContent =
+        (lang === 'ru') ? `Предметов: ${filtered.length}` : `Items: ${filtered.length}`;
 
-      for(const it of filtered){
-        const row=document.createElement('div');
-        row.className='item';
-        const left=document.createElement('div'); left.className='left';
+      for (const it of filtered){
+        const row = document.createElement('div');
+        row.className = 'item';
+
+        const left = document.createElement('div');
+        left.className = 'left';
         left.appendChild(makeImg(it.icon));
-        const t=document.createElement('div'); t.className='title'; t.textContent=label(it);
+
+        const t = document.createElement('div');
+        t.className = 'title';
+        t.textContent = label(it);
         left.appendChild(t);
-        const right=document.createElement('div');
-        const chip=document.createElement('span'); chip.className='chip'; chip.textContent=(it.category||'');
+
+        const right = document.createElement('div');
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = it.category || '';
         right.appendChild(chip);
-        row.appendChild(left); row.appendChild(right);
+
+        row.appendChild(left);
+        row.appendChild(right);
+
+        row.addEventListener('click', ()=> showDetails(it.id));
         list.appendChild(row);
       }
     }
 
-    async function init(){
-      document.getElementById('btnLang').textContent = lang.toUpperCase();
+    // -------- TREE VIEW --------
+    function renderTreeNode(itemId, totalQty){
+      const it = itemsById.get(String(itemId));
+      const kids = getChildren(itemId);
+      const canExpand = it && isCraftable(it) && kids.length > 0;
 
-      document.getElementById('tabAll').onclick=()=>setActiveTab('all');
-      document.getElementById('tabWeapons').onclick=()=>setActiveTab('weapons');
-      document.getElementById('tabArmor').onclick=()=>setActiveTab('armor');
-      document.getElementById('tabJewelry').onclick=()=>setActiveTab('jewelry');
-      document.getElementById('tabOther').onclick=()=>setActiveTab('other');
-      document.getElementById('btnLang').onclick=toggleLang;
-      document.getElementById('searchInput').oninput=renderList;
+      const wrap = document.createElement('div');
+      wrap.className = 'node';
 
-      try{
-        ITEMS = await loadCSV(ITEMS_URL);
-        RECIPES = await loadCSV(RECIPES_URL); // грузим, чтобы проверить, что не падает (пока не используем)
-        document.getElementById('statusLine').textContent = `Loaded: items ${ITEMS.length}, recipes ${RECIPES.length}`;
-        setActiveTab(activeTab || 'weapons');
-      } catch(e){
-        console.error(e);
-        document.getElementById('statusLine').textContent = 'Load error: ' + (e?.message||String(e));
+      const head = document.createElement('div');
+      head.className = 'node-head';
+
+      const left = document.createElement('div');
+      left.className = 'left';
+      left.appendChild(makeImg(it?.icon));
+      const nm = document.createElement('div');
+      nm.className = 'title';
+      nm.textContent = label(it);
+      left.appendChild(nm);
+
+      const right = document.createElement('div');
+      right.className = 'right';
+
+      const badge = document.createElement('span');
+      badge.className = 'chip';
+      badge.textContent = canExpand ? 'craft' : 'base';
+      right.appendChild(badge);
+
+      if (canExpand){
+        const btn = document.createElement('button');
+        btn.className = 'btn small';
+        btn.type = 'button';
+        btn.textContent = 'Expand';
+        btn.addEventListener('click', (e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          const openNow = wrap.classList.toggle('open');
+          btn.textContent = openNow ? 'Collapse' : 'Expand';
+
+          // lazy build children only once
+          const childrenEl = wrap.querySelector('.node-children');
+          if (openNow && childrenEl.childElementCount === 0){
+            for (const k of kids){
+              const childQty = totalQty * k.qty;
+              childrenEl.appendChild(renderTreeNode(k.component_id, childQty));
+            }
+          }
+        });
+        right.appendChild(btn);
       }
 
+      const q = document.createElement('span');
+      q.className = 'qty';
+      q.textContent = `x${totalQty}`;
+      right.appendChild(q);
+
+      head.appendChild(left);
+      head.appendChild(right);
+
+      const children = document.createElement('div');
+      children.className = 'node-children';
+
+      wrap.appendChild(head);
+      wrap.appendChild(children);
+
+      return wrap;
+    }
+
+    function renderTreeView(){
+      if (!currentItemId) return;
+
+      document.getElementById('treeView').classList.remove('hidden');
+      document.getElementById('totalView').classList.add('hidden');
+
+      const qty = Math.max(1, toNonNegIntInputValue(document.getElementById('craftQty').value));
+      document.getElementById('craftQty').value = String(qty);
+
+      renderDetailsTitle();
+
+      const treeEl = document.getElementById('treeView');
+      treeEl.innerHTML = '';
+
+      const root = itemsById.get(String(currentItemId));
+      const rootNode = document.createElement('div');
+      rootNode.className = 'node open';
+
+      const head = document.createElement('div');
+      head.className = 'node-head';
+
+      const left = document.createElement('div');
+      left.className = 'left';
+      left.appendChild(makeImg(root?.icon));
+      const nm = document.createElement('div');
+      nm.className = 'title';
+      nm.textContent = label(root);
+      left.appendChild(nm);
+
+      const right = document.createElement('div');
+      right.className = 'right';
+      const badge = document.createElement('span');
+      badge.className = 'chip';
+      badge.textContent = root?.category || '';
+      right.appendChild(badge);
+
+      const qEl = document.createElement('span');
+      qEl.className = 'qty';
+      qEl.textContent = `x${qty}`;
+      right.appendChild(qEl);
+
+      head.appendChild(left);
+      head.appendChild(right);
+
+      const children = document.createElement('div');
+      children.className = 'node-children';
+
+      const kids = getChildren(currentItemId);
+      if (kids.length === 0){
+        const msg = document.createElement('div');
+        msg.className = 'muted';
+        msg.textContent = (lang === 'ru') ? 'Рецепт не найден.' : 'Recipe not found.';
+        children.appendChild(msg);
+      } else {
+        for (const k of kids){
+          const childQty = qty * k.qty;
+          children.appendChild(renderTreeNode(k.component_id, childQty));
+        }
+      }
+
+      rootNode.appendChild(head);
+      rootNode.appendChild(children);
+      treeEl.appendChild(rootNode);
+    }
+
+    // -------- TOTALS --------
+    function calcDirectTotals(rootId, craftQty){
+      const totals = new Map();
+      const kids = getChildren(rootId);
+      for (const k of kids){
+        const need = k.qty * craftQty;
+        totals.set(k.component_id, (totals.get(k.component_id) || 0) + need);
+      }
+      return totals;
+    }
+
+    function calcBaseTotals(rootId, craftQty){
+      const totals = new Map();
+      const inStack = new Set();
+
+      function walk(itemId, mult){
+        if (inStack.has(itemId)) return;
+        inStack.add(itemId);
+
+        const kids = getChildren(itemId);
+        for (const k of kids){
+          const comp = itemsById.get(String(k.component_id));
+          if (!comp) continue;
+
+          const need = k.qty * mult;
+          const canExpand = isCraftable(comp) && getChildren(comp.id).length > 0;
+
+          if (canExpand){
+            walk(comp.id, need);
+          } else {
+            totals.set(comp.id, (totals.get(comp.id) || 0) + need);
+          }
+        }
+
+        inStack.delete(itemId);
+      }
+
+      walk(rootId, craftQty);
+      return totals;
+    }
+
+    function renderTotalView(){
+      if (!currentItemId) return;
+
+      document.getElementById('treeView').classList.add('hidden');
+      document.getElementById('totalView').classList.remove('hidden');
+
+      const qty = Math.max(1, toNonNegIntInputValue(document.getElementById('craftQty').value));
+      document.getElementById('craftQty').value = String(qty);
+
+      viewMode = 'total';
+      renderDetailsTitle();
+
+      const root = itemsById.get(String(currentItemId));
+
+      const totalsMap = (totalMode === 'direct')
+        ? calcDirectTotals(currentItemId, qty)
+        : calcBaseTotals(currentItemId, qty);
+
+      const rows = Array.from(totalsMap.entries())
+        .map(([id, req]) => {
+          const it = itemsById.get(String(id));
+          if (!it) return null;
+          const have = getHave(id);
+          const need = Math.max(0, req - have);
+          const price = getPrice(id);
+          const cost = need * price;
+          return { id:String(id), it, req, have, need, price, cost };
+        })
+        .filter(Boolean)
+        .sort((a,b)=> label(a.it).localeCompare(label(b.it)));
+
+      const totalReq  = rows.reduce((s,r)=>s+r.req, 0);
+      const totalHave = rows.reduce((s,r)=>s+r.have, 0);
+      const totalNeed = rows.reduce((s,r)=>s+r.need, 0);
+      const totalCost = rows.reduce((s,r)=>s+r.cost, 0);
+
+      document.getElementById('costSummary').innerHTML = `
+        <div><div class="k">${lang==='ru'?'Крафт':'Craft'} qty</div><div class="v">x${qty}</div></div>
+        <div><div class="k">${lang==='ru'?'Всего нужно':'Total required'}</div><div class="v">${totalReq}</div></div>
+        <div><div class="k">${lang==='ru'?'В наличии':'Total have'}</div><div class="v">${totalHave}</div></div>
+        <div><div class="k">${lang==='ru'?'Докупить':'Total need'}</div><div class="v">${totalNeed}</div></div>
+        <div><div class="k">${lang==='ru'?'Стоимость':'Total cost'}</div><div class="v">${formatAdena(totalCost)}</div></div>
+      `;
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>${lang==='ru'?'Материал':'Material'}</th>
+              <th class="num">${lang==='ru'?'Нужно':'Required'}</th>
+              <th class="num">${lang==='ru'?'В наличии':'Have'}</th>
+              <th class="num">${lang==='ru'?'Докупить':'Need'}</th>
+              <th class="num">${lang==='ru'?'Цена (1)':'Price (1)'}</th>
+              <th class="num">${lang==='ru'?'Стоимость':'Cost'}</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      for (const r of rows){
+        const needCls = r.need > 0 ? 'bad' : 'ok';
+        html += `
+          <tr data-id="${r.id}">
+            <td>
+              <div class="cell-name">
+                <img class="ico" src="${r.it.icon || ''}" onerror="this.style.visibility='hidden';" alt="">
+                <span>${label(r.it)}</span>
+              </div>
+            </td>
+            <td class="num">${r.req}</td>
+            <td class="num">
+              <input class="cell-input haveInput" type="text" inputmode="numeric" value="${String(r.have)}">
+            </td>
+            <td class="num ${needCls}">${r.need}</td>
+            <td class="num">
+              <input class="cell-input priceInput" type="text" inputmode="numeric" value="${String(r.price)}">
+            </td>
+            <td class="num">${formatAdena(r.cost)}</td>
+          </tr>
+        `;
+      }
+
+      html += `
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" class="num">${lang==='ru'?'ИТОГО (ADENA)':'TOTAL (ADENA)'}</td>
+              <td class="num">${formatAdena(totalCost)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      `;
+
+      document.getElementById('totalTableWrap').innerHTML = html;
+
+      // inputs: не перерисовываем на каждый символ, только на blur/enter/change
+      document.querySelectorAll('#totalTableWrap tr[data-id]').forEach(tr=>{
+        const id = tr.getAttribute('data-id');
+        const haveInput = tr.querySelector('.haveInput');
+        const priceInput = tr.querySelector('.priceInput');
+
+        const commitHave = ()=>{
+          const v = toNonNegIntInputValue(haveInput.value);
+          HAVE[id] = v;
+          saveHave();
+          renderTotalView();
+        };
+        const commitPrice = ()=>{
+          const v = toNonNegIntInputValue(priceInput.value);
+          PRICE[id] = v;
+          savePrice();
+          renderTotalView();
+        };
+
+        haveInput.addEventListener('input', ()=>{ haveInput.value = haveInput.value.replace(/[^\d]/g,''); });
+        priceInput.addEventListener('input', ()=>{ priceInput.value = priceInput.value.replace(/[^\d]/g,''); });
+
+        haveInput.addEventListener('change', commitHave);
+        priceInput.addEventListener('change', commitPrice);
+        haveInput.addEventListener('blur', commitHave);
+        priceInput.addEventListener('blur', commitPrice);
+
+        haveInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter'){ e.preventDefault(); commitHave(); }});
+        priceInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter'){ e.preventDefault(); commitPrice(); }});
+      });
+    }
+
+    function setViewTree(){
+      viewMode = 'tree';
+      document.getElementById('btnTree').classList.add('active');
+      document.getElementById('btnTotal').classList.remove('active');
+      renderTreeView();
+    }
+
+    function setViewTotal(){
+      viewMode = 'total';
+      document.getElementById('btnTotal').classList.add('active');
+      document.getElementById('btnTree').classList.remove('active');
+      renderTotalView();
+    }
+
+    function setTotalMode(mode){
+      totalMode = mode; // base/direct
+
+      document.getElementById('btnModeBase').classList.toggle('primary', totalMode === 'base');
+      document.getElementById('btnModeDirect').classList.toggle('primary', totalMode === 'direct');
+
+      if (viewMode === 'total' && currentItemId) renderTotalView();
+    }
+
+    function wireUI(){
+      // tabs
+      document.getElementById('tabAll').addEventListener('click', ()=> setActiveTab('all'));
+      document.getElementById('tabWeapons').addEventListener('click', ()=> setActiveTab('weapons'));
+      document.getElementById('tabArmor').addEventListener('click', ()=> setActiveTab('armor'));
+      document.getElementById('tabJewelry').addEventListener('click', ()=> setActiveTab('jewelry'));
+      document.getElementById('tabOther').addEventListener('click', ()=> setActiveTab('other'));
+
+      // language
+      document.getElementById('btnLang').addEventListener('click', toggleLang);
+      document.getElementById('btnLang2').addEventListener('click', toggleLang);
+
+      // search
+      document.getElementById('searchInput').addEventListener('input', renderList);
+
+      // back
+      document.getElementById('btnBack').addEventListener('click', ()=>{
+        showList();
+        renderList();
+      });
+
+      // views
+      document.getElementById('btnTree').addEventListener('click', setViewTree);
+      document.getElementById('btnTotal').addEventListener('click', setViewTotal);
+
+      // total modes
+      document.getElementById('btnModeBase').addEventListener('click', ()=> setTotalMode('base'));
+      document.getElementById('btnModeDirect').addEventListener('click', ()=> setTotalMode('direct'));
+
+      // reset
+      document.getElementById('btnReset').addEventListener('click', resetHavePrice);
+
+      // craft qty
+      const qtyEl = document.getElementById('craftQty');
+      qtyEl.addEventListener('input', ()=>{
+        qtyEl.value = qtyEl.value.replace(/[^\d]/g,'');
+        const v = Math.max(1, toNonNegIntInputValue(qtyEl.value));
+        qtyEl.value = String(v);
+
+        if (!currentItemId) return;
+        renderDetailsTitle();
+        if (viewMode === 'tree') renderTreeView();
+        else renderTotalView();
+      });
+    }
+
+    async function init(){
+      wireUI();
+      loadUserData();
+
+      // buttons state
+      refreshLangButtons();
+      setTotalMode('base');
+
       try{
-        Telegram?.WebApp?.ready();
-        Telegram?.WebApp?.expand();
-      }catch(e){}
+        document.getElementById('statusLine').textContent = (lang==='ru') ? 'Загрузка...' : 'Loading...';
+
+        ITEMS = await loadCSV(ITEMS_URL);
+        RECIPES = await loadCSV(RECIPES_URL);
+
+        buildIndexes();
+
+        document.getElementById('statusLine').textContent =
+          (lang==='ru')
+            ? `Готово: items ${ITEMS.length}, recipes ${RECIPES.length}`
+            : `Loaded: items ${ITEMS.length}, recipes ${RECIPES.length}`;
+
+        // apply tab
+        setActiveTab(activeTab);
+
+        // Telegram init
+        try{
+          Telegram?.WebApp?.ready();
+          Telegram?.WebApp?.expand();
+        } catch(e){}
+
+      } catch(e){
+        console.error(e);
+        document.getElementById('statusLine').textContent =
+          (lang==='ru') ? `Ошибка загрузки: ${e?.message || e}` : `Load error: ${e?.message || e}`;
+      }
     }
 
     document.addEventListener('DOMContentLoaded', init);
