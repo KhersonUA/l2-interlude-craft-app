@@ -157,12 +157,18 @@
       padding:10px;
       background: #132646;
     }
+
+    /* IMPORTANT FIX:
+       open should affect ONLY the node's own children,
+       not all descendant .node-children.
+    */
     .node-children{
       padding:8px 10px 12px 22px;
       border-top:1px solid var(--border);
       display:none;
     }
-    .node.open .node-children{ display:block; }
+    .node.open > .node-children{ display:block; }
+
     .small{ font-size:12px; color: var(--muted); }
     .right{ display:flex; align-items:center; gap:12px; white-space:nowrap; }
     .expand-btn{
@@ -219,7 +225,6 @@
     .neg{ color: var(--bad); font-weight:700; }
     .footer-note{ margin-top:8px; font-size:12px; color:var(--muted); }
 
-    /* summary bar */
     .summary{
       margin-top:10px;
       padding:10px;
@@ -290,8 +295,6 @@
     let currentMode = 'tree';
     let iconFilled = 0, iconTotal = 0;
 
-    // user inputs (persisted in localStorage)
-    // have[id] = number, price[id] = number
     let HAVE = {};
     let PRICE = {};
     const LS_HAVE = 'l2_have_v1';
@@ -340,12 +343,8 @@
     }
 
     function loadUserData(){
-      try{
-        HAVE = JSON.parse(localStorage.getItem(LS_HAVE) || '{}') || {};
-      }catch{ HAVE = {}; }
-      try{
-        PRICE = JSON.parse(localStorage.getItem(LS_PRICE) || '{}') || {};
-      }catch{ PRICE = {}; }
+      try{ HAVE = JSON.parse(localStorage.getItem(LS_HAVE) || '{}') || {}; } catch { HAVE = {}; }
+      try{ PRICE = JSON.parse(localStorage.getItem(LS_PRICE) || '{}') || {}; } catch { PRICE = {}; }
     }
     function saveHave(){ localStorage.setItem(LS_HAVE, JSON.stringify(HAVE)); }
     function savePrice(){ localStorage.setItem(LS_PRICE, JSON.stringify(PRICE)); }
@@ -473,7 +472,7 @@
             <span class="qty">x${craftQty}</span>
           </div>
         </div>
-        <div class="node-children" style="display:block;"></div>
+        <div class="node-children"></div>
       `;
       treeEl.appendChild(top);
 
@@ -507,7 +506,7 @@
           </div>
           <div class="right">
             <span class="badge">${canExpand ? 'craft' : 'base'}</span>
-            ${canExpand ? `<button class="expand-btn">Expand</button>` : `<span></span>`}
+            ${canExpand ? `<button class="expand-btn" type="button">Expand</button>` : `<span></span>`}
             <span class="qty">x${totalQty}</span>
           </div>
         </div>
@@ -517,11 +516,15 @@
       if (canExpand){
         const btn = wrap.querySelector('.expand-btn');
         const childrenEl = wrap.querySelector('.node-children');
+
         btn.addEventListener('click', (e) => {
+          e.preventDefault();
           e.stopPropagation();
-          const open = wrap.classList.toggle('open');
-          btn.textContent = open ? 'Collapse' : 'Expand';
-          if (open && childrenEl.childElementCount === 0){
+
+          const openNow = wrap.classList.toggle('open');
+          btn.textContent = openNow ? 'Collapse' : 'Expand';
+
+          if (openNow && childrenEl.childElementCount === 0){
             for (const r of recipe){
               const cid = String(r.component_id);
               const cqty = totalQty * Number(r.qty || 0);
@@ -530,6 +533,7 @@
           }
         });
       }
+
       return wrap;
     }
 
@@ -542,7 +546,6 @@
       document.getElementById('detailsTitle').textContent = `Total materials: ${weaponName} (x${craftQty})`;
       document.getElementById('iconsInfo').textContent = `Icons filled: ${iconFilled}/${iconTotal}`;
 
-      // totals
       const totals = new Map();
       computeTotals(String(currentWeaponId), craftQty, totals);
 
@@ -557,7 +560,6 @@
         })
         .sort((a,b) => getDisplayName(a.it).localeCompare(getDisplayName(b.it)));
 
-      // summary
       const totalReq = rows.reduce((s,r)=>s+r.req, 0);
       const totalHave = rows.reduce((s,r)=>s+r.have, 0);
       const totalNeed = rows.reduce((s,r)=>s+r.need, 0);
@@ -572,7 +574,6 @@
         <div><div class="k">Total cost (adena)</div><div class="v">${formatAdena(totalCost)}</div></div>
       `;
 
-      // table
       let html = `
         <table>
           <thead>
@@ -618,7 +619,6 @@
       html += `</tbody></table>`;
       document.getElementById('totalTableWrap').innerHTML = html;
 
-      // bind inputs
       document.querySelectorAll('#totalTableWrap tr[data-id]').forEach(tr => {
         const id = tr.getAttribute('data-id');
         const haveInput = tr.querySelector('.haveInput');
@@ -629,7 +629,7 @@
           haveInput.value = String(v);
           HAVE[id] = v;
           saveHave();
-          renderTotalView(); // re-render for recalculation
+          renderTotalView();
         });
 
         priceInput.addEventListener('input', () => {
@@ -637,7 +637,7 @@
           priceInput.value = String(v);
           PRICE[id] = v;
           savePrice();
-          renderTotalView(); // re-render for recalculation
+          renderTotalView();
         });
       });
     }
@@ -697,7 +697,6 @@
         ITEMS = await loadCSV(ITEMS_URL);
         RECIPES = await loadCSV(RECIPES_URL);
 
-        // normalize to your sheet columns:
         // Items: id, name_en, name_ru, category, craftable, icon
         ITEMS.forEach(it => {
           it.id = String(it.id || '').trim();
