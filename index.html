@@ -13,112 +13,99 @@
       --bg:#0b1220;
       --panel:#111b2e;
       --panel2:#0f172a;
-      --item:#15233d;
-      --item2:#1b2a46;
+      --card:#1b2942;
+      --card2:#223455;
       --text:#e5e7eb;
       --muted:#9ca3af;
-      --line:#263553;
-      --accent:#60a5fa;
-      --warn:#fbbf24;
-      --good:#34d399;
-      --bad:#fb7185;
+      --accent:#f59e0b;
+      --border:#2b3a57;
     }
-    *{box-sizing:border-box}
     body{
       font-family: Arial, sans-serif;
-      background: radial-gradient(1200px 800px at 20% 0%, #0f1b33 0%, var(--bg) 55%);
+      background: var(--bg);
       color: var(--text);
       margin:0;
       padding:16px;
     }
-    .topbar{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      margin-bottom:12px;
-      flex-wrap:wrap;
-    }
     h1{
       font-size:18px;
-      margin:0;
-      flex:1;
-      min-width:220px;
+      margin:0 0 12px 0;
     }
-    .tabs{
+    .topbar{
       display:flex;
-      gap:8px;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
     }
-    .tab{
-      border:1px solid var(--line);
-      background:var(--panel);
+    .btn{
+      background:#0b1a33;
       color:var(--text);
-      padding:8px 10px;
-      border-radius:8px;
+      border:1px solid #36507a;
+      padding:6px 10px;
+      border-radius:6px;
       cursor:pointer;
       font-size:13px;
     }
-    .tab.active{
-      border-color:var(--accent);
-      box-shadow:0 0 0 2px rgba(96,165,250,.12) inset;
+    .btn:hover{ background:#122546; }
+    .btn.active{
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(245,158,11,.25) inset;
     }
-
-    .row{
+    .toolbar{
       display:flex;
-      gap:10px;
       align-items:center;
+      gap:10px;
+      margin:10px 0 12px 0;
       flex-wrap:wrap;
-      margin:10px 0 12px;
+    }
+    .toolbar label{
+      font-size:12px;
+      color:var(--muted);
     }
     input[type="text"], input[type="number"]{
-      background:#0b1426;
-      border:1px solid var(--line);
-      color:var(--text);
+      width:100%;
       padding:10px;
-      border-radius:8px;
+      font-size:16px;
+      margin:0;
+      border-radius:6px;
+      border:1px solid var(--border);
+      background: #0b1630;
+      color: var(--text);
       outline:none;
+    }
+    input[type="number"]{
+      width:90px;
+      padding:8px;
       font-size:14px;
     }
-    input[type="text"]{width:min(980px,100%)}
-    .btn{
-      background:var(--panel);
-      border:1px solid var(--line);
-      color:var(--text);
-      padding:9px 10px;
-      border-radius:8px;
-      cursor:pointer;
-      font-size:13px;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-    }
-    .btn.primary{ border-color:var(--accent); }
-    .btn.warn{ border-color:rgba(251,191,36,.7); }
-    .btn:disabled{ opacity:.5; cursor:not-allowed; }
-
     .hint{
-      color:var(--muted);
       font-size:12px;
-      margin:6px 0 0;
+      color:var(--muted);
+      margin-top:6px;
+    }
+
+    .screen{
+      background: transparent;
     }
 
     .list{
       margin-top:10px;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
     }
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:10px;
+    .item-row{
+      background: #13203a;
+      border:1px solid #223455;
+      padding:10px 10px;
+      border-radius:8px;
+      margin-bottom:8px;
+      cursor:pointer;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      cursor:pointer;
+      gap:10px;
     }
-    .card:hover{ background:rgba(255,255,255,.05); }
-    .left{
+    .item-row:hover{ background:#17284a; }
+    .item-left{
       display:flex;
       align-items:center;
       gap:10px;
@@ -128,137 +115,141 @@
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      max-width:75vw;
+      max-width: 900px;
       font-size:14px;
     }
     .badge{
       font-size:11px;
       color:var(--muted);
-      padding:2px 8px;
-      border:1px solid var(--line);
+      border:1px solid var(--border);
+      padding:2px 6px;
       border-radius:999px;
-      background:rgba(0,0,0,.15);
     }
     .qty{
-      color:var(--warn);
       font-weight:bold;
+      color: var(--accent);
       margin-left:10px;
       white-space:nowrap;
     }
 
     .icon{
-      width:26px;height:26px;border-radius:6px;
-      border:1px solid rgba(255,255,255,.12);
+      width:22px;
+      height:22px;
+      border-radius:6px;
       object-fit:cover;
-      background:#0b1426;
-      display:block;
+      flex:0 0 auto;
+      background: #0b1630;
+      border:1px solid var(--border);
+    }
+    .dot{
+      width:12px;
+      height:12px;
+      border-radius:999px;
+      background:#334155;
+      border:1px solid #475569;
       flex:0 0 auto;
     }
-    .icon.placeholder{
-      width:26px;height:26px;border-radius:6px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.06);
-    }
 
-    .viewHeader{
+    .details-header{
       display:flex;
       align-items:center;
       gap:10px;
-      margin:10px 0 8px;
       flex-wrap:wrap;
+      margin-bottom:8px;
     }
-    .viewTitle{
+    .title-small{
       font-size:13px;
       color:var(--muted);
     }
 
-    /* Tree */
-    .tree{
+    .tree, .total{
       margin-top:10px;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
     }
     .node{
-      background:rgba(255,255,255,.03);
-      border:1px solid var(--line);
+      border:1px solid var(--border);
+      background: #12223f;
       border-radius:10px;
-      padding:9px 10px;
+      margin:10px 0;
+      overflow:hidden;
     }
-    .nodeRow{
+    .node-head{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
+      padding:10px 10px;
+      background: #132646;
     }
-    .nodeChildren{
-      margin-top:8px;
-      padding-left:16px;
-      border-left:2px solid rgba(96,165,250,.18);
-      display:flex;
-      flex-direction:column;
-      gap:8px;
+    .node-children{
+      padding:8px 10px 12px 22px;
+      border-top:1px solid var(--border);
+      display:none;
     }
+    .node.open .node-children{ display:block; }
     .small{
-      font-size:11px;color:var(--muted);
+      font-size:12px;
+      color: var(--muted);
     }
-    .expandBtn{
-      padding:6px 10px;
+    .right{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      white-space:nowrap;
+    }
+    .expand-btn{
+      padding:4px 8px;
+      font-size:12px;
       border-radius:8px;
-      border:1px solid var(--line);
-      background:#0b1426;
+      border:1px solid #36507a;
+      background:#0b1a33;
       color:var(--text);
       cursor:pointer;
-      font-size:12px;
     }
+    .expand-btn:hover{ background:#122546; }
 
-    /* Total table */
-    .tableWrap{
-      margin-top:10px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      overflow:hidden;
-      background:rgba(255,255,255,.02);
-    }
     table{
       width:100%;
       border-collapse:collapse;
-      font-size:13px;
+      margin-top:10px;
+      border:1px solid var(--border);
+      overflow:hidden;
+      border-radius:10px;
     }
     thead th{
+      background:#132646;
+      color:var(--muted);
+      font-size:12px;
       text-align:left;
       padding:10px;
-      background:rgba(0,0,0,.2);
-      border-bottom:1px solid var(--line);
-      color:var(--muted);
-      font-weight:600;
+      border-bottom:1px solid var(--border);
     }
     tbody td{
-      padding:8px 10px;
-      border-bottom:1px solid rgba(38,53,83,.6);
-      vertical-align:middle;
-    }
-    tbody tr:hover{ background:rgba(255,255,255,.03); }
-    .num{ text-align:right; white-space:nowrap; }
-    .needGood{ color:var(--good); font-weight:700; }
-    .needBad{ color:var(--warn); font-weight:700; }
-    .totalBar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
       padding:10px;
-      background:rgba(0,0,0,.18);
-      border-top:1px solid var(--line);
+      border-bottom:1px solid #1f2f4e;
+      vertical-align:middle;
       font-size:13px;
     }
-    .totalValue{
-      font-weight:800;
-      color:var(--warn);
-    }
+    tbody tr:hover{ background:#12223f; }
 
-    .backBtn{
-      margin-top:6px;
+    .cell-name{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .cell-name span{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .num{
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+    }
+    .footer-note{
+      margin-top:8px;
+      font-size:12px;
+      color:var(--muted);
     }
   </style>
 </head>
@@ -266,619 +257,504 @@
 <body>
   <div class="topbar">
     <h1>L2 Interlude Craft Calculator</h1>
-    <div class="tabs">
-      <button class="tab active" id="tabWeapons">Weapons</button>
-    </div>
+    <button id="tabWeapons" class="btn active">Weapons</button>
   </div>
 
-  <div id="screenList">
-    <div class="row">
-      <input id="search" type="text" placeholder="Search weapon (Arcana / Аркана)" />
-    </div>
-    <div class="hint" id="status">Loading data…</div>
+  <!-- LIST SCREEN -->
+  <div id="screenList" class="screen">
+    <input id="searchInput" type="text" placeholder="Search weapon (Arcana / Аркана)" />
+    <div class="hint" id="statusLine">Loading data...</div>
     <div class="list" id="weaponsList"></div>
   </div>
 
-  <div id="screenDetails" style="display:none;">
-    <div class="viewHeader">
-      <button class="btn backBtn" id="backBtn">◀ Back</button>
-      <div class="viewTitle" id="detailsTitle"></div>
+  <!-- DETAILS SCREEN -->
+  <div id="screenDetails" class="screen" style="display:none;">
+    <div class="details-header">
+      <button id="btnBack" class="btn">◀ Back</button>
+      <div class="title-small" id="detailsTitle">Components</div>
     </div>
 
-    <div class="row">
-      <label class="small">Craft quantity (how many items to craft)</label>
-      <input id="craftQty" type="number" min="1" step="1" value="1" style="width:120px"/>
-      <button class="btn primary" id="btnTree">TREE VIEW</button>
-      <button class="btn warn" id="btnTotal">TOTAL MATERIALS</button>
-      <span class="small" id="iconsStatus"></span>
+    <div class="toolbar">
+      <label>Craft quantity (how many items to craft)</label>
+      <input id="craftQty" type="number" min="1" step="1" value="1"/>
+      <button id="btnTree" class="btn active">TREE VIEW</button>
+      <button id="btnTotal" class="btn">TOTAL MATERIALS</button>
+      <div class="small" id="iconsInfo"></div>
     </div>
 
-    <div id="treeView"></div>
-    <div id="totalView" style="display:none;"></div>
+    <div id="treeView" class="tree"></div>
+    <div id="totalView" class="total" style="display:none;"></div>
+
+    <div class="footer-note">Tip: Click “Expand” to раскрыть крафт компонента (qty умножается).</div>
   </div>
 
-<script>
-/* =========================
-   CONFIG: CSV URLs
-========================= */
-const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
-const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
+  <script>
+    /* ===== CSV LINKS (YOUR PUBLISHED CSV LINKS) ===== */
+    const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
+    const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
 
-/* =========================
-   CSV parser (supports quotes)
-========================= */
-function parseCSV(text){
-  const rows = [];
-  let row = [];
-  let cur = '';
-  let inQuotes = false;
+    /* ===== STATE ===== */
+    let ITEMS = [];
+    let RECIPES = [];
 
-  for (let i=0;i<text.length;i++){
-    const ch = text[i];
-    const next = text[i+1];
+    const itemsById = new Map();
+    const recipeByItemId = new Map(); // item_id -> [ {component_id, qty} ... ]
 
-    if (ch === '"' && inQuotes && next === '"'){
-      cur += '"';
-      i++;
-      continue;
-    }
-    if (ch === '"'){
-      inQuotes = !inQuotes;
-      continue;
-    }
-    if (ch === ',' && !inQuotes){
-      row.push(cur);
-      cur = '';
-      continue;
-    }
-    if ((ch === '\n' || ch === '\r') && !inQuotes){
-      if (ch === '\r' && next === '\n') i++;
-      row.push(cur);
-      cur = '';
-      if (row.length > 1 || row[0] !== ''){
+    let currentWeaponId = null;
+    let currentMode = 'tree'; // 'tree' | 'total'
+    let iconFilled = 0;
+    let iconTotal = 0;
+
+    /* ===== CSV PARSER (handles commas + quotes) ===== */
+    function parseCSV(text){
+      const rows = [];
+      let row = [];
+      let cur = '';
+      let inQuotes = false;
+
+      for (let i=0; i<text.length; i++){
+        const ch = text[i];
+        const next = text[i+1];
+
+        if (ch === '"' && inQuotes && next === '"'){
+          cur += '"';
+          i++;
+          continue;
+        }
+        if (ch === '"'){
+          inQuotes = !inQuotes;
+          continue;
+        }
+        if (ch === ',' && !inQuotes){
+          row.push(cur);
+          cur = '';
+          continue;
+        }
+        if ((ch === '\n' || ch === '\r') && !inQuotes){
+          if (ch === '\r' && next === '\n') i++;
+          row.push(cur);
+          cur = '';
+          if (row.length > 1 || row[0] !== '') rows.push(row);
+          row = [];
+          continue;
+        }
+        cur += ch;
+      }
+      if (cur.length || row.length){
+        row.push(cur);
         rows.push(row);
       }
-      row = [];
-      continue;
-    }
-    cur += ch;
-  }
-  if (cur.length || row.length){
-    row.push(cur);
-    rows.push(row);
-  }
-  return rows;
-}
-
-async function loadCSV(url){
-  const res = await fetch(url);
-  const text = await res.text();
-  const rows = parseCSV(text.trim());
-  const headers = rows[0].map(h => h.trim());
-  return rows.slice(1).map(r => {
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = (r[i] ?? '').trim());
-    return obj;
-  });
-}
-
-/* =========================
-   Data stores
-========================= */
-let ITEMS = [];
-let RECIPES = [];
-let itemsById = new Map();
-let recipesByItem = new Map();
-
-let currentWeaponId = null;
-
-/* local overrides */
-const LS_HAVE_KEY  = 'l2craft_have_by_id';
-const LS_PRICE_KEY = 'l2craft_price_by_id';
-
-function getLSMap(key){
-  try { return JSON.parse(localStorage.getItem(key) || '{}'); }
-  catch { return {}; }
-}
-function setLSMap(key, obj){
-  localStorage.setItem(key, JSON.stringify(obj));
-}
-
-function getHave(itemId, fallback){
-  const m = getLSMap(LS_HAVE_KEY);
-  if (m[itemId] !== undefined) return Number(m[itemId]) || 0;
-  return Number(fallback) || 0;
-}
-function setHave(itemId, val){
-  const m = getLSMap(LS_HAVE_KEY);
-  m[itemId] = Number(val) || 0;
-  setLSMap(LS_HAVE_KEY, m);
-}
-
-function getPrice(itemId, fallback){
-  const m = getLSMap(LS_PRICE_KEY);
-  if (m[itemId] !== undefined) return Number(m[itemId]) || 0;
-  return Number(fallback) || 0;
-}
-function setPrice(itemId, val){
-  const m = getLSMap(LS_PRICE_KEY);
-  m[itemId] = Number(val) || 0;
-  setLSMap(LS_PRICE_KEY, m);
-}
-
-/* =========================
-   Helpers
-========================= */
-function n(x){ return Number(x) || 0; }
-function clampInt(x, min=1){ x = Math.floor(Number(x)||min); return x < min ? min : x; }
-
-function nameOf(item){
-  return `${item.name_en || ''} — ${item.name_ru || ''}`.trim();
-}
-
-function iconEl(url){
-  if (!url) {
-    const d = document.createElement('div');
-    d.className = 'icon placeholder';
-    return d;
-  }
-  const img = document.createElement('img');
-  img.className = 'icon';
-  img.loading = 'lazy';
-  img.referrerPolicy = 'no-referrer';
-  img.src = url;
-  img.onerror = () => {
-    img.style.display = 'none';
-    const d = document.createElement('div');
-    d.className = 'icon placeholder';
-    img.parentElement?.insertBefore(d, img);
-  };
-  return img;
-}
-
-/* =========================
-   Build indexes
-========================= */
-function buildIndexes(){
-  itemsById = new Map();
-  for (const it of ITEMS){
-    itemsById.set(String(it.id), it);
-  }
-  recipesByItem = new Map();
-  for (const r of RECIPES){
-    const itemId = String(r.item_id);
-    if (!recipesByItem.has(itemId)) recipesByItem.set(itemId, []);
-    recipesByItem.get(itemId).push({
-      component_id: String(r.component_id),
-      qty: n(r.qty)
-    });
-  }
-}
-
-/* =========================
-   Compute craft tree totals
-   - returns:
-     {
-       tree: node object,
-       totals: Map<baseItemId, qty>
-     }
-========================= */
-function computeTree(itemId, craftQty){
-  const visited = new Set(); // protect from loops
-
-  function walk(id, mult){
-    const item = itemsById.get(String(id));
-    if (!item) return { node: null, totals: new Map() };
-
-    const node = {
-      id: String(id),
-      name: nameOf(item),
-      category: item.category || '',
-      craftable: (item.craftable || '').toLowerCase(),
-      icon: item.icon || '',
-      qty: mult,
-      children: []
-    };
-
-    // If non-craftable => base material (stop)
-    const isCraftable = (node.craftable === 'yes');
-    const recipe = recipesByItem.get(String(id)) || [];
-
-    // If craftable but no recipe lines => treat as base to avoid empty dead end
-    if (!isCraftable || recipe.length === 0){
-      const totals = new Map();
-      totals.set(String(id), mult);
-      return { node, totals };
+      return rows;
     }
 
-    // loop guard per path
-    const key = `${id}`;
-    if (visited.has(key)){
-      const totals = new Map();
-      totals.set(String(id), mult); // fallback
-      return { node, totals };
+    async function loadCSV(url){
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('CSV fetch failed: ' + res.status + ' ' + url);
+      const text = await res.text();
+      const rows = parseCSV(text.trim());
+      const headers = rows[0].map(h => h.trim());
+
+      return rows.slice(1).map(cols => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = (cols[i] ?? '').trim());
+        return obj;
+      });
     }
-    visited.add(key);
 
-    // aggregate child totals
-    const totals = new Map();
-    for (const line of recipe){
-      const childId = String(line.component_id);
-      const childQty = mult * n(line.qty);
+    function rebuildIndexes(){
+      itemsById.clear();
+      recipeByItemId.clear();
 
-      const childRes = walk(childId, childQty);
-      if (childRes.node) node.children.push(childRes.node);
+      iconFilled = 0;
+      iconTotal = 0;
 
-      for (const [k,v] of childRes.totals.entries()){
-        totals.set(k, (totals.get(k) || 0) + v);
+      for (const it of ITEMS){
+        const id = String(it.id);
+        itemsById.set(id, it);
+
+        if (it.icon && it.icon.length > 0) iconFilled++;
+        iconTotal++;
+      }
+
+      for (const r of RECIPES){
+        const itemId = String(r.item_id);
+        const compId = String(r.component_id);
+        const qty = Number(r.qty || 0);
+
+        if (!recipeByItemId.has(itemId)) recipeByItemId.set(itemId, []);
+        recipeByItemId.get(itemId).push({ component_id: compId, qty });
       }
     }
 
-    visited.delete(key);
-    return { node, totals };
-  }
+    /* ===== UI HELPERS ===== */
+    function getDisplayName(it){
+      if (!it) return 'Unknown';
+      const en = (it.name_en || '').trim();
+      const ru = (it.name_ru || '').trim();
+      if (en && ru) return `${en} — ${ru}`;
+      return en || ru || 'Unnamed';
+    }
 
-  return walk(String(itemId), craftQty);
-}
+    function iconOrDot(it){
+      const icon = (it && it.icon) ? String(it.icon).trim() : '';
+      if (icon){
+        return `<img class="icon" src="${icon}" alt="">`;
+      }
+      return `<span class="dot"></span>`;
+    }
 
-/* =========================
-   Render list
-========================= */
-function renderWeaponsList(){
-  const q = (document.getElementById('search').value || '').toLowerCase().trim();
-  const list = document.getElementById('weaponsList');
-  list.innerHTML = '';
+    function showList(){
+      document.getElementById('screenDetails').style.display = 'none';
+      document.getElementById('screenList').style.display = 'block';
+      currentWeaponId = null;
+    }
 
-  const weapons = ITEMS.filter(it => (it.category || '').toLowerCase() === 'weapon');
-  const filtered = weapons.filter(it => {
-    const hay = `${it.name_en||''} ${it.name_ru||''}`.toLowerCase();
-    return !q || hay.includes(q);
-  });
+    function showDetails(){
+      document.getElementById('screenList').style.display = 'none';
+      document.getElementById('screenDetails').style.display = 'block';
+    }
 
-  document.getElementById('status').textContent = `Weapons: ${filtered.length}`;
+    function showTree(){
+      currentMode = 'tree';
+      document.getElementById('btnTree').classList.add('active');
+      document.getElementById('btnTotal').classList.remove('active');
+      document.getElementById('treeView').style.display = 'block';
+      document.getElementById('totalView').style.display = 'none';
+      refreshCurrentDetails(); // render for current mode
+    }
 
-  for (const it of filtered){
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.onclick = () => openWeapon(it.id);
+    function showTotal(){
+      currentMode = 'total';
+      document.getElementById('btnTotal').classList.add('active');
+      document.getElementById('btnTree').classList.remove('active');
+      document.getElementById('treeView').style.display = 'none';
+      document.getElementById('totalView').style.display = 'block';
+      refreshCurrentDetails(); // render for current mode
+    }
 
-    const left = document.createElement('div');
-    left.className = 'left';
-    left.appendChild(iconEl(it.icon));
+    /* ===== DATA LOGIC ===== */
+    function findWeapons(){
+      return ITEMS.filter(it => String(it.category).toLowerCase() === 'weapon');
+    }
 
-    const nm = document.createElement('div');
-    nm.className = 'name';
-    nm.textContent = nameOf(it);
-    left.appendChild(nm);
+    function isCraftable(it){
+      return String(it.craftable || '').toLowerCase() === 'yes';
+    }
 
-    const right = document.createElement('div');
-    right.style.display = 'flex';
-    right.style.alignItems = 'center';
-    right.style.gap = '10px';
+    // Build a craft tree node (with expanded children if craftable and recipe exists)
+    function buildNode(itemId, mult){
+      const it = itemsById.get(String(itemId));
+      const qtyMult = Number(mult || 1);
 
-    const badge = document.createElement('span');
-    badge.className = 'badge';
-    badge.textContent = 'weapon';
-    right.appendChild(badge);
+      const children = recipeByItemId.get(String(itemId)) || [];
+      const canExpand = isCraftable(it) && children.length > 0;
 
-    card.appendChild(left);
-    card.appendChild(right);
-    list.appendChild(card);
-  }
-}
+      return { item: it, itemId: String(itemId), mult: qtyMult, canExpand, children };
+    }
 
-/* =========================
-   Render tree view
-========================= */
-function renderTree(node){
-  const wrap = document.createElement('div');
-  wrap.className = 'tree';
+    // Compute total base materials for an item considering craftable subcomponents
+    // Strategy:
+    // - If item has recipe and item is craftable: expand recipe.
+    // - Otherwise treat it as base material itself.
+    function computeTotals(itemId, neededQty, totalsMap){
+      const it = itemsById.get(String(itemId));
+      const qty = Number(neededQty || 0);
+      const recipe = recipeByItemId.get(String(itemId)) || [];
+      const expand = it && isCraftable(it) && recipe.length > 0;
 
-  function renderNode(nod, depth=0){
-    const el = document.createElement('div');
-    el.className = 'node';
+      if (!it) return;
 
-    const row = document.createElement('div');
-    row.className = 'nodeRow';
+      if (!expand){
+        const key = String(itemId);
+        totalsMap.set(key, (totalsMap.get(key) || 0) + qty);
+        return;
+      }
 
-    const left = document.createElement('div');
-    left.className = 'left';
-    left.appendChild(iconEl(nod.icon));
-
-    const nm = document.createElement('div');
-    nm.className = 'name';
-    nm.textContent = nod.name;
-    left.appendChild(nm);
-
-    row.appendChild(left);
-
-    const right = document.createElement('div');
-    right.style.display='flex';
-    right.style.alignItems='center';
-    right.style.gap='10px';
-
-    const badge = document.createElement('span');
-    badge.className = 'badge';
-    badge.textContent = nod.category || '';
-    right.appendChild(badge);
-
-    const qty = document.createElement('span');
-    qty.className = 'qty';
-    qty.textContent = `x${Math.round(nod.qty)}`;
-    right.appendChild(qty);
-
-    // Expand/Collapse if children exist
-    let childrenWrap = null;
-    if (nod.children && nod.children.length){
-      const btn = document.createElement('button');
-      btn.className = 'expandBtn';
-      btn.textContent = 'Expand';
-      btn.onclick = () => {
-        const open = childrenWrap.style.display !== 'none';
-        childrenWrap.style.display = open ? 'none' : 'flex';
-        btn.textContent = open ? 'Expand' : 'Collapse';
-      };
-      right.appendChild(btn);
-
-      childrenWrap = document.createElement('div');
-      childrenWrap.className = 'nodeChildren';
-      childrenWrap.style.display = 'none';
-      for (const c of nod.children){
-        childrenWrap.appendChild(renderNode(c, depth+1));
+      for (const row of recipe){
+        computeTotals(row.component_id, qty * Number(row.qty || 0), totalsMap);
       }
     }
 
-    el.appendChild(row);
+    /* ===== RENDER LIST ===== */
+    function renderWeaponsList(){
+      const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const listEl = document.getElementById('weaponsList');
+      const weapons = findWeapons()
+        .filter(it => {
+          if (!q) return true;
+          const en = (it.name_en || '').toLowerCase();
+          const ru = (it.name_ru || '').toLowerCase();
+          return en.includes(q) || ru.includes(q);
+        });
 
-    if (childrenWrap) el.appendChild(childrenWrap);
-    return el;
-  }
+      document.getElementById('statusLine').textContent =
+        `Weapons: ${weapons.length}  |  Icons filled: ${iconFilled}/${iconTotal}`;
 
-  wrap.appendChild(renderNode(node));
-  return wrap;
-}
+      listEl.innerHTML = weapons.map(it => {
+        const id = String(it.id);
+        return `
+          <div class="item-row" data-id="${id}">
+            <div class="item-left">
+              ${iconOrDot(it)}
+              <div class="name">${getDisplayName(it)}</div>
+            </div>
+            <span class="badge">weapon</span>
+          </div>
+        `;
+      }).join('');
 
-/* =========================
-   Render totals table
-========================= */
-function renderTotals(totalsMap){
-  // Convert to array with item data
-  const rows = [];
-  for (const [id, req] of totalsMap.entries()){
-    const it = itemsById.get(String(id));
-    if (!it) continue;
+      listEl.querySelectorAll('.item-row').forEach(row => {
+        row.addEventListener('click', () => openWeapon(row.getAttribute('data-id')));
+      });
+    }
 
-    const required = Math.round(req);
+    /* ===== DETAILS: TREE VIEW ===== */
+    function renderTreeView(){
+      const treeEl = document.getElementById('treeView');
+      treeEl.innerHTML = '';
 
-    const have = getHave(String(id), it.have);
-    const price = getPrice(String(id), it.price);
+      const craftQty = Math.max(1, Number(document.getElementById('craftQty').value || 1));
+      const weapon = itemsById.get(String(currentWeaponId));
+      const weaponName = getDisplayName(weapon);
 
-    const need = Math.max(0, required - have);
-    const cost = need * price;
+      document.getElementById('detailsTitle').textContent = `Components: ${weaponName} (x${craftQty})`;
+      document.getElementById('iconsInfo').textContent = `Icons filled: ${iconFilled}/${iconTotal}`;
 
-    rows.push({
-      id: String(id),
-      icon: it.icon || '',
-      name: nameOf(it),
-      required, have, need,
-      price, cost
+      // top node
+      const top = document.createElement('div');
+      top.className = 'node open';
+      top.innerHTML = `
+        <div class="node-head">
+          <div class="item-left">
+            ${iconOrDot(weapon)}
+            <div class="name">${weaponName}</div>
+          </div>
+          <div class="right">
+            <span class="badge">weapon</span>
+            <span class="qty">x${craftQty}</span>
+          </div>
+        </div>
+        <div class="node-children" style="display:block;"></div>
+      `;
+      treeEl.appendChild(top);
+
+      const childrenEl = top.querySelector('.node-children');
+      const recipe = recipeByItemId.get(String(currentWeaponId)) || [];
+
+      if (recipe.length === 0){
+        childrenEl.innerHTML = `<div class="small">No recipe found for this item.</div>`;
+        return;
+      }
+
+      for (const row of recipe){
+        const compId = String(row.component_id);
+        const compQty = Number(row.qty || 0) * craftQty;
+        childrenEl.appendChild(renderTreeNode(compId, compQty));
+      }
+    }
+
+    function renderTreeNode(itemId, totalQty){
+      const it = itemsById.get(String(itemId));
+      const name = getDisplayName(it);
+      const recipe = recipeByItemId.get(String(itemId)) || [];
+      const canExpand = it && isCraftable(it) && recipe.length > 0;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'node';
+
+      wrap.innerHTML = `
+        <div class="node-head">
+          <div class="item-left">
+            ${iconOrDot(it)}
+            <div class="name">${name}</div>
+          </div>
+          <div class="right">
+            <span class="badge">${canExpand ? 'craft' : 'base'}</span>
+            ${canExpand ? `<button class="expand-btn">Expand</button>` : `<span></span>`}
+            <span class="qty">x${totalQty}</span>
+          </div>
+        </div>
+        <div class="node-children"></div>
+      `;
+
+      if (canExpand){
+        const btn = wrap.querySelector('.expand-btn');
+        const childrenEl = wrap.querySelector('.node-children');
+
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const open = wrap.classList.toggle('open');
+          btn.textContent = open ? 'Collapse' : 'Expand';
+
+          if (open && childrenEl.childElementCount === 0){
+            for (const r of recipe){
+              const cid = String(r.component_id);
+              const cqty = totalQty * Number(r.qty || 0);
+              childrenEl.appendChild(renderTreeNode(cid, cqty));
+            }
+          }
+        });
+      }
+
+      return wrap;
+    }
+
+    /* ===== DETAILS: TOTAL MATERIALS VIEW ===== */
+    function renderTotalView(){
+      const totalEl = document.getElementById('totalView');
+      totalEl.innerHTML = '';
+
+      const craftQty = Math.max(1, Number(document.getElementById('craftQty').value || 1));
+      const weapon = itemsById.get(String(currentWeaponId));
+      const weaponName = getDisplayName(weapon);
+
+      document.getElementById('detailsTitle').textContent = `Total materials: ${weaponName} (x${craftQty})`;
+      document.getElementById('iconsInfo').textContent = `Icons filled: ${iconFilled}/${iconTotal}`;
+
+      // compute totals
+      const totals = new Map();
+      computeTotals(String(currentWeaponId), craftQty, totals);
+
+      // render table
+      const rows = Array.from(totals.entries())
+        .map(([id, qty]) => ({ id, qty, it: itemsById.get(id) }))
+        .sort((a,b) => getDisplayName(a.it).localeCompare(getDisplayName(b.it)));
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th class="num">Required</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      for (const r of rows){
+        html += `
+          <tr>
+            <td>
+              <div class="cell-name">
+                ${iconOrDot(r.it)}
+                <span>${getDisplayName(r.it)}</span>
+              </div>
+            </td>
+            <td class="num">${r.qty}</td>
+          </tr>
+        `;
+      }
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      totalEl.innerHTML = html;
+    }
+
+    /* ===== MAIN DETAILS REFRESH (CRITICAL FIX) ===== */
+    function refreshCurrentDetails(){
+      if (!currentWeaponId) return;
+
+      // Safety: ensure at least one mode visible
+      const tree = document.getElementById('treeView');
+      const total = document.getElementById('totalView');
+
+      if (currentMode === 'tree'){
+        tree.style.display = 'block';
+        total.style.display = 'none';
+        renderTreeView();
+      } else {
+        tree.style.display = 'none';
+        total.style.display = 'block';
+        renderTotalView();
+      }
+
+      // If somehow both got hidden (bad state) -> force tree
+      if (tree.style.display === 'none' && total.style.display === 'none'){
+        currentMode = 'tree';
+        tree.style.display = 'block';
+        total.style.display = 'none';
+        document.getElementById('btnTree').classList.add('active');
+        document.getElementById('btnTotal').classList.remove('active');
+        renderTreeView();
+      }
+    }
+
+    /* ===== OPEN WEAPON (CRITICAL FIX) ===== */
+    function openWeapon(id){
+      currentWeaponId = String(id);
+      showDetails();
+
+      // Always start in TREE VIEW so screen is never empty
+      currentMode = 'tree';
+      document.getElementById('btnTree').classList.add('active');
+      document.getElementById('btnTotal').classList.remove('active');
+
+      refreshCurrentDetails();
+    }
+
+    /* ===== INIT ===== */
+    async function init(){
+      const status = document.getElementById('statusLine');
+
+      try{
+        ITEMS = await loadCSV(ITEMS_URL);
+        RECIPES = await loadCSV(RECIPES_URL);
+
+        // Normalize keys to match your current sheet:
+        // Items columns: id, name_en, name_ru, category, craftable, icon
+        // Recipes columns: item_id, component_id, qty
+        ITEMS.forEach(it => {
+          // ensure expected fields exist
+          it.id = String(it.id || '').trim();
+          it.category = String(it.category || '').trim();
+          it.craftable = String(it.craftable || '').trim();
+          it.icon = String(it.icon || '').trim();
+        });
+
+        RECIPES.forEach(r => {
+          r.item_id = String(r.item_id || '').trim();
+          r.component_id = String(r.component_id || '').trim();
+          r.qty = String(r.qty || '').trim();
+        });
+
+        rebuildIndexes();
+
+        console.log('ITEMS:', ITEMS);
+        console.log('RECIPES:', RECIPES);
+
+        renderWeaponsList();
+        status.textContent = `Weapons: ${findWeapons().length}  |  Icons filled: ${iconFilled}/${iconTotal}`;
+      }catch(e){
+        console.error(e);
+        status.textContent = 'Error loading data. Check CSV publish + columns.';
+      }
+    }
+
+    /* ===== EVENTS ===== */
+    document.getElementById('searchInput').addEventListener('input', renderWeaponsList);
+
+    document.getElementById('btnBack').addEventListener('click', () => {
+      showList();
+      renderWeaponsList();
     });
-  }
 
-  // Sort by cost desc, then name
-  rows.sort((a,b) => (b.cost - a.cost) || a.name.localeCompare(b.name));
+    document.getElementById('btnTree').addEventListener('click', showTree);
+    document.getElementById('btnTotal').addEventListener('click', showTotal);
 
-  const wrap = document.createElement('div');
-
-  const tableWrap = document.createElement('div');
-  tableWrap.className = 'tableWrap';
-
-  const table = document.createElement('table');
-
-  const thead = document.createElement('thead');
-  thead.innerHTML = `
-    <tr>
-      <th style="width:44px;">Icon</th>
-      <th>Material</th>
-      <th class="num">Required</th>
-      <th class="num">Have</th>
-      <th class="num">Need</th>
-      <th class="num">Price</th>
-      <th class="num">Cost</th>
-    </tr>
-  `;
-  table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
-
-  let totalCost = 0;
-
-  for (const r of rows){
-    totalCost += r.cost;
-
-    const tr = document.createElement('tr');
-
-    const tdIcon = document.createElement('td');
-    tdIcon.appendChild(iconEl(r.icon));
-    tr.appendChild(tdIcon);
-
-    const tdName = document.createElement('td');
-    tdName.textContent = r.name;
-    tr.appendChild(tdName);
-
-    const tdReq = document.createElement('td');
-    tdReq.className = 'num';
-    tdReq.textContent = String(r.required);
-    tr.appendChild(tdReq);
-
-    // Have input
-    const tdHave = document.createElement('td');
-    tdHave.className = 'num';
-    const haveInput = document.createElement('input');
-    haveInput.type = 'number';
-    haveInput.min = '0';
-    haveInput.step = '1';
-    haveInput.value = String(r.have);
-    haveInput.style.width = '110px';
-    haveInput.onchange = () => {
-      setHave(r.id, haveInput.value);
-      // re-render totals
+    document.getElementById('craftQty').addEventListener('input', () => {
+      const v = Math.max(1, Number(document.getElementById('craftQty').value || 1));
+      document.getElementById('craftQty').value = String(v);
       refreshCurrentDetails();
-    };
-    tdHave.appendChild(haveInput);
-    tr.appendChild(tdHave);
+    });
 
-    const tdNeed = document.createElement('td');
-    tdNeed.className = 'num';
-    const needSpan = document.createElement('span');
-    needSpan.className = (r.need > 0) ? 'needBad' : 'needGood';
-    needSpan.textContent = String(r.need);
-    tdNeed.appendChild(needSpan);
-    tr.appendChild(tdNeed);
+    // Telegram
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.ready();
 
-    // Price input
-    const tdPrice = document.createElement('td');
-    tdPrice.className = 'num';
-    const priceInput = document.createElement('input');
-    priceInput.type = 'number';
-    priceInput.min = '0';
-    priceInput.step = '1';
-    priceInput.value = String(r.price);
-    priceInput.style.width = '110px';
-    priceInput.onchange = () => {
-      setPrice(r.id, priceInput.value);
-      refreshCurrentDetails();
-    };
-    tdPrice.appendChild(priceInput);
-    tr.appendChild(tdPrice);
-
-    const tdCost = document.createElement('td');
-    tdCost.className = 'num';
-    tdCost.textContent = String(r.cost);
-    tr.appendChild(tdCost);
-
-    tbody.appendChild(tr);
-  }
-
-  table.appendChild(tbody);
-  tableWrap.appendChild(table);
-
-  const totalBar = document.createElement('div');
-  totalBar.className = 'totalBar';
-  totalBar.innerHTML = `
-    <div class="small">Total Cost (Adena) for materials to buy</div>
-    <div class="totalValue">${Math.round(totalCost)}</div>
-  `;
-  tableWrap.appendChild(totalBar);
-
-  wrap.appendChild(tableWrap);
-
-  return wrap;
-}
-
-/* =========================
-   Screen navigation
-========================= */
-function openWeapon(id){
-  currentWeaponId = String(id);
-
-  document.getElementById('screenList').style.display = 'none';
-  document.getElementById('screenDetails').style.display = 'block';
-
-  refreshCurrentDetails();
-}
-
-function closeDetails(){
-  currentWeaponId = null;
-  document.getElementById('screenList').style.display = 'block';
-  document.getElementById('screenDetails').style.display = 'none';
-}
-
-function refreshCurrentDetails(){
-  if (!currentWeaponId) return;
-
-  const craftQty = clampInt(document.getElementById('craftQty').value, 1);
-  document.getElementById('craftQty').value = String(craftQty);
-
-  const weapon = itemsById.get(currentWeaponId);
-  document.getElementById('detailsTitle').textContent =
-    `Components: ${weapon ? nameOf(weapon) : currentWeaponId} (x${craftQty})`;
-
-  // Compute tree + totals
-  const { tree, totals } = computeTree(currentWeaponId, craftQty);
-
-  // icon fill status
-  let filled = 0;
-  for (const it of ITEMS) if (it.icon) filled++;
-  document.getElementById('iconsStatus').textContent = `Icons filled: ${filled}/${ITEMS.length}`;
-
-  // Render current view
-  const treeView = document.getElementById('treeView');
-  const totalView = document.getElementById('totalView');
-
-  // clear
-  treeView.innerHTML = '';
-  totalView.innerHTML = '';
-
-  treeView.appendChild(renderTree(tree));
-
-  totalView.appendChild(renderTotals(totals));
-}
-
-/* =========================
-   View mode toggles
-========================= */
-function showTree(){
-  document.getElementById('treeView').style.display = 'block';
-  document.getElementById('totalView').style.display = 'none';
-}
-function showTotal(){
-  document.getElementById('treeView').style.display = 'none';
-  document.getElementById('totalView').style.display = 'block';
-}
-
-/* =========================
-   Init
-========================= */
-async function init(){
-  const tg = window.Telegram.WebApp;
-  tg.ready();
-
-  document.getElementById('tabWeapons').onclick = () => {
-    document.getElementById('tabWeapons').classList.add('active');
-    renderWeaponsList();
-  };
-
-  document.getElementById('search').addEventListener('input', renderWeaponsList);
-
-  document.getElementById('backBtn').onclick = closeDetails;
-  document.getElementById('btnTree').onclick = showTree;
-  document.getElementById('btnTotal').onclick = showTotal;
-
-  document.getElementById('craftQty').addEventListener('change', () => {
-    refreshCurrentDetails();
-  });
-
-  // Load data
-  try{
-    ITEMS = await loadCSV(ITEMS_URL);
-    RECIPES = await loadCSV(RECIPES_URL);
-
-    buildIndexes();
-
-    // small sanity log
-    console.log('ITEMS:', ITEMS);
-    console.log('RECIPES:', RECIPES);
-
-    document.getElementById('status').textContent = 'Data loaded.';
-    renderWeaponsList();
-  } catch(e){
-    console.error(e);
-    document.getElementById('status').textContent = 'Failed to load CSV. Check links and publish settings.';
-  }
-}
-
-init();
-</script>
+    init();
+  </script>
 </body>
 </html>
