@@ -24,7 +24,7 @@
       margin:0;
       padding:16px;
     }
-    h1{ font-size:18px; margin:0 0 12px 0; }
+    h1{ font-size:18px; margin:0; }
 
     .topbar{
       display:flex;
@@ -33,6 +33,12 @@
       gap:12px;
       margin-bottom:10px;
     }
+    .topbar-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
     .btn{
       background:#0b1a33;
       color:var(--text);
@@ -42,6 +48,7 @@
       cursor:pointer;
       font-size:13px;
       user-select:none;
+      white-space:nowrap;
     }
     .btn:hover{ background:#122546; }
     .btn.active{
@@ -60,6 +67,7 @@
       font-size:12px;
       color:var(--muted);
     }
+
     input[type="text"], input[type="number"]{
       width:100%;
       padding:10px;
@@ -72,7 +80,7 @@
       outline:none;
     }
     input[type="number"]{
-      width:120px;
+      width:90px;
       padding:8px;
       font-size:14px;
     }
@@ -107,7 +115,6 @@
       border:1px solid var(--border);
       padding:2px 6px;
       border-radius:999px;
-      text-transform: lowercase;
     }
     .qty{ font-weight:bold; color: var(--accent); margin-left:10px; white-space:nowrap; }
 
@@ -172,7 +179,6 @@
       background:#0b1a33;
       color:var(--text);
       cursor:pointer;
-      user-select:none;
     }
     .expand-btn:hover{ background:#122546; }
 
@@ -236,21 +242,15 @@
       background:#0f1c36;
       font-weight:700;
     }
-
-    .langbtn{
-      border-color: var(--accent);
-      font-weight:700;
-      min-width:46px;
-    }
   </style>
 </head>
 
 <body>
   <div class="topbar">
-    <h1 id="appTitle">L2 Interlude Craft Calculator</h1>
-    <div style="display:flex; gap:8px; align-items:center;">
+    <h1>L2 Interlude Craft Calculator</h1>
+    <div class="topbar-right">
       <button id="tabWeapons" class="btn active">Weapons</button>
-      <button id="btnLang" class="btn langbtn">RU</button>
+      <button id="btnLang" class="btn">EN</button>
     </div>
   </div>
 
@@ -273,6 +273,9 @@
       <input id="craftQty" type="number" min="1" step="1" value="1"/>
       <button id="btnTree" class="btn active">TREE VIEW</button>
       <button id="btnTotal" class="btn">TOTAL MATERIALS</button>
+      <button id="btnBase" class="btn">BASE</button>
+      <button id="btnDirect" class="btn">DIRECT</button>
+      <button id="btnReset" class="btn">Reset have/price</button>
       <div class="small" id="iconsInfo"></div>
     </div>
 
@@ -285,123 +288,132 @@
   </div>
 
   <script>
+    /* ===================== DATA SOURCES ===================== */
     const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
     const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
 
+    /* ===================== STATE ===================== */
     let ITEMS = [];
     let RECIPES = [];
     const itemsById = new Map();
     const recipeByItemId = new Map();
+
     let currentWeaponId = null;
+
+    // modes: tree | total | base | direct
     let currentMode = 'tree';
+
     let iconFilled = 0, iconTotal = 0;
 
+    // user data
     let HAVE = {};
     let PRICE = {};
     const LS_HAVE = 'l2_have_v1';
     const LS_PRICE = 'l2_price_v1';
 
+    // language: 'en' | 'ru'
+    let LANG = 'en';
     const LS_LANG = 'l2_lang_v1';
-    let LANG = (localStorage.getItem(LS_LANG) || 'ru').toLowerCase(); // 'ru' | 'en'
 
-    const I18N = {
+    /* ===================== I18N ===================== */
+    const T = {
       en: {
-        appTitle: 'L2 Interlude Craft Calculator',
         weapons: 'Weapons',
+        back: '◀ Back',
         searchPlaceholder: 'Search weapon (Arcana / Аркана)',
         loading: 'Loading data...',
-        weaponsCount: (n, icons) => `Weapons: ${n}  |  Icons: ${icons}`,
-        back: '◀ Back',
+        weaponsCount: (n)=>`Weapons: ${n}`,
+        icons: (f,t)=>`Icons: ${f}/${t}`,
+        components: (name, qty)=>`Components: ${name} (x${qty})`,
+        totalMaterialsTitle: (name, qty)=>`Total materials: ${name} (x${qty})`,
         craftQty: 'Craft quantity',
         treeView: 'TREE VIEW',
         totalMaterials: 'TOTAL MATERIALS',
-        icons: (f,t) => `Icons: ${f}/${t}`,
-        componentsTitle: (name, x) => `Components: ${name} (x${x})`,
-        totalTitle: (name, x) => `Total materials: ${name} (x${x})`,
+        base: 'BASE',
+        direct: 'DIRECT',
+        reset: 'Reset have/price',
+        hintExpand: 'Tip: click "Expand" to раскрыть крафт компонента (qty будет умножаться).',
         noRecipe: 'No recipe found for this item.',
         badgeWeapon: 'weapon',
         badgeBase: 'base',
         badgeCraft: 'craft',
         expand: 'Expand',
         collapse: 'Collapse',
-        tipExpand: 'Tip: Click Expand to раскрыть крафт компонента (qty будет умножаться).',
-        // totals summary
-        sumCraftQty: 'Craft qty',
-        sumTotalRequired: 'Total required',
-        sumTotalHave: 'Total have',
-        sumTotalNeed: 'Total need',
-        sumTotalCost: 'Total cost',
-        // table headers
+        summaryCraftQty: 'Craft qty',
+        summaryTotalReq: 'Total required',
+        summaryTotalHave: 'Total have',
+        summaryTotalNeed: 'Total need',
+        summaryTotalCost: 'Total cost',
         thMaterial: 'Material',
         thRequired: 'Required',
         thHave: 'Have',
         thNeed: 'Need',
         thPrice: 'Price (1)',
         thCost: 'Cost',
-        tfootTotal: 'TOTAL COST (ADENA)'
+        footTotalCost: 'TOTAL COST (ADENA)',
+        langBtn: 'RU',
+        resetConfirm: 'Reset have/price done.'
       },
       ru: {
-        appTitle: 'L2 Interlude Craft Calculator',
         weapons: 'Оружие',
+        back: '◀ Назад',
         searchPlaceholder: 'Поиск оружия (Arcana / Аркана)',
         loading: 'Загрузка данных...',
-        weaponsCount: (n, icons) => `Оружие: ${n}  |  Иконки: ${icons}`,
-        back: '◀ Назад',
+        weaponsCount: (n)=>`Оружие: ${n}`,
+        icons: (f,t)=>`Иконки: ${f}/${t}`,
+        components: (name, qty)=>`Компоненты: ${name} (x${qty})`,
+        totalMaterialsTitle: (name, qty)=>`Итого материалы: ${name} (x${qty})`,
         craftQty: 'Количество крафта',
         treeView: 'TREE VIEW',
         totalMaterials: 'ИТОГО МАТЕРИАЛЫ',
-        icons: (f,t) => `Иконки: ${f}/${t}`,
-        componentsTitle: (name, x) => `Компоненты: ${name} (x${x})`,
-        totalTitle: (name, x) => `Итого материалы: ${name} (x${x})`,
+        base: 'BASE',
+        direct: 'DIRECT',
+        reset: 'Сброс have/price',
+        hintExpand: 'Подсказка: нажми "Развернуть", чтобы открыть крафт компонента (qty будет умножаться).',
         noRecipe: 'Рецепт для этого предмета не найден.',
-        badgeWeapon: 'weapon',
-        badgeBase: 'base',
-        badgeCraft: 'craft',
+        badgeWeapon: 'оружие',
+        badgeBase: 'база',
+        badgeCraft: 'крафт',
         expand: 'Развернуть',
         collapse: 'Свернуть',
-        tipExpand: 'Подсказка: нажми “Развернуть”, чтобы открыть крафт компонента (qty будет умножаться).',
-        // totals summary
-        sumCraftQty: 'Кол-во крафта',
-        sumTotalRequired: 'Нужно всего',
-        sumTotalHave: 'Есть всего',
-        sumTotalNeed: 'Купить нужно',
-        sumTotalCost: 'Стоимость всего',
-        // table headers
+        summaryCraftQty: 'Кол-во крафта',
+        summaryTotalReq: 'Всего нужно',
+        summaryTotalHave: 'В наличии',
+        summaryTotalNeed: 'Нужно купить',
+        summaryTotalCost: 'Общая стоимость',
         thMaterial: 'Материал',
         thRequired: 'Нужно',
         thHave: 'Есть',
         thNeed: 'Купить',
         thPrice: 'Цена (1)',
         thCost: 'Стоимость',
-        tfootTotal: 'ИТОГО (АДЕНА)'
+        footTotalCost: 'ИТОГО (АДЕНА)',
+        langBtn: 'EN',
+        resetConfirm: 'Сброс have/price выполнен.'
       }
     };
 
-    function t(key, ...args){
-      const pack = I18N[LANG] || I18N.ru;
-      const v = pack[key];
-      return (typeof v === 'function') ? v(...args) : (v ?? key);
+    function tr(key, ...args){
+      const v = T[LANG][key];
+      return (typeof v === 'function') ? v(...args) : v;
     }
 
-    function setLang(next){
-      LANG = next;
-      localStorage.setItem(LS_LANG, LANG);
-      applyStaticTranslations();
-      renderWeaponsList();
-      refreshCurrentDetails();
+    function applyI18nStatic(){
+      document.getElementById('tabWeapons').textContent = tr('weapons');
+      document.getElementById('btnBack').textContent = tr('back');
+      document.getElementById('searchInput').placeholder = tr('searchPlaceholder');
+
+      document.getElementById('lblCraftQty').textContent = tr('craftQty');
+      document.getElementById('btnTree').textContent = tr('treeView');
+      document.getElementById('btnTotal').textContent = tr('totalMaterials');
+      document.getElementById('btnBase').textContent = tr('base');
+      document.getElementById('btnDirect').textContent = tr('direct');
+      document.getElementById('btnReset').textContent = tr('reset');
+
+      document.getElementById('btnLang').textContent = tr('langBtn');
     }
 
-    function applyStaticTranslations(){
-      document.getElementById('appTitle').textContent = t('appTitle');
-      document.getElementById('tabWeapons').textContent = t('weapons');
-      document.getElementById('searchInput').setAttribute('placeholder', t('searchPlaceholder'));
-      document.getElementById('btnBack').textContent = t('back');
-      document.getElementById('lblCraftQty').textContent = t('craftQty');
-      document.getElementById('btnTree').textContent = t('treeView');
-      document.getElementById('btnTotal').textContent = t('totalMaterials');
-      document.getElementById('btnLang').textContent = (LANG === 'ru') ? 'EN' : 'RU';
-    }
-
+    /* ===================== CSV PARSER ===================== */
     function parseCSV(text){
       const rows = [];
       let row = [];
@@ -443,13 +455,20 @@
       });
     }
 
+    /* ===================== USER DATA ===================== */
     function loadUserData(){
       try{ HAVE = JSON.parse(localStorage.getItem(LS_HAVE) || '{}') || {}; } catch { HAVE = {}; }
       try{ PRICE = JSON.parse(localStorage.getItem(LS_PRICE) || '{}') || {}; } catch { PRICE = {}; }
+      try{
+        const saved = String(localStorage.getItem(LS_LANG) || '').toLowerCase();
+        if (saved === 'ru' || saved === 'en') LANG = saved;
+      } catch {}
     }
     function saveHave(){ localStorage.setItem(LS_HAVE, JSON.stringify(HAVE)); }
     function savePrice(){ localStorage.setItem(LS_PRICE, JSON.stringify(PRICE)); }
+    function saveLang(){ localStorage.setItem(LS_LANG, LANG); }
 
+    /* ===================== INDEXES ===================== */
     function rebuildIndexes(){
       itemsById.clear();
       recipeByItemId.clear();
@@ -471,6 +490,7 @@
       }
     }
 
+    /* ===================== HELPERS ===================== */
     function getDisplayName(it){
       if (!it) return 'Unknown';
       const en = (it.name_en || '').trim();
@@ -484,20 +504,19 @@
       }
     }
 
+    function getDisplayNameBoth(it){
+      // used only where you want EN — RU
+      if (!it) return 'Unknown';
+      const en = (it.name_en || '').trim();
+      const ru = (it.name_ru || '').trim();
+      if (en && ru) return `${en} — ${ru}`;
+      return en || ru || 'Unnamed';
+    }
+
     function iconOrDot(it){
       const icon = (it && it.icon) ? String(it.icon).trim() : '';
       if (icon) return `<img class="icon" src="${icon}" alt="">`;
       return `<span class="dot"></span>`;
-    }
-
-    function showList(){
-      document.getElementById('screenDetails').style.display = 'none';
-      document.getElementById('screenList').style.display = 'block';
-      currentWeaponId = null;
-    }
-    function showDetails(){
-      document.getElementById('screenList').style.display = 'none';
-      document.getElementById('screenDetails').style.display = 'block';
     }
 
     function isCraftable(it){
@@ -509,11 +528,46 @@
     }
 
     function setIconsInfo(){
-      document.getElementById('iconsInfo').textContent = t('icons', iconFilled, iconTotal);
+      document.getElementById('iconsInfo').textContent = tr('icons', iconFilled, iconTotal);
     }
 
-    // totals: expand only if item is craftable and has recipe
-    function computeTotals(itemId, neededQty, totalsMap){
+    function showList(){
+      document.getElementById('screenDetails').style.display = 'none';
+      document.getElementById('screenList').style.display = 'block';
+      currentWeaponId = null;
+    }
+
+    function showDetails(){
+      document.getElementById('screenList').style.display = 'none';
+      document.getElementById('screenDetails').style.display = 'block';
+    }
+
+    function toNonNegInt(s){
+      const cleaned = String(s || '').replace(/[^\d]/g,'');
+      const n = Number(cleaned || 0);
+      return Math.max(0, Math.floor(n));
+    }
+
+    function formatAdena(n){
+      const x = Math.floor(Number(n || 0));
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    function badgeForItem(it){
+      const recipe = recipeByItemId.get(String(it?.id)) || [];
+      const canExpand = it && isCraftable(it) && recipe.length > 0;
+      if (!canExpand) return tr('badgeBase');
+      return tr('badgeCraft');
+    }
+
+    /* ===================== RECIPES LOGIC (NO PERCENT) ===================== */
+    // Modes:
+    // - tree: show direct components for selected item, expandable craftables
+    // - total: recursively expand craftables into base materials (default)
+    // - base: same as total (base-only) (kept for your UI)
+    // - direct: no recursive expansion; show only first-level components of selected item
+
+    function computeTotalsRecursive(itemId, neededQty, totalsMap){
       const it = itemsById.get(String(itemId));
       const qty = Number(neededQty || 0);
       const recipe = recipeByItemId.get(String(itemId)) || [];
@@ -527,14 +581,23 @@
         return;
       }
       for (const row of recipe){
-        computeTotals(row.component_id, qty * Number(row.qty || 0), totalsMap);
+        computeTotalsRecursive(row.component_id, qty * Number(row.qty || 0), totalsMap);
       }
     }
 
+    function computeTotalsDirectOnly(itemId, craftQty, totalsMap){
+      const recipe = recipeByItemId.get(String(itemId)) || [];
+      for (const row of recipe){
+        const key = String(row.component_id);
+        const add = Number(row.qty || 0) * Number(craftQty || 0);
+        totalsMap.set(key, (totalsMap.get(key) || 0) + add);
+      }
+    }
+
+    /* ===================== RENDER: LIST ===================== */
     function renderWeaponsList(){
       const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
       const listEl = document.getElementById('weaponsList');
-
       const weapons = findWeapons().filter(it => {
         if (!q) return true;
         const en = (it.name_en || '').toLowerCase();
@@ -543,15 +606,15 @@
       });
 
       document.getElementById('statusLine').textContent =
-        t('weaponsCount', weapons.length, `${iconFilled}/${iconTotal}`);
+        `${tr('weaponsCount', weapons.length)}  |  ${tr('icons', iconFilled, iconTotal)}`;
 
       listEl.innerHTML = weapons.map(it => `
         <div class="item-row" data-id="${String(it.id)}">
           <div class="item-left">
             ${iconOrDot(it)}
-            <div class="name">${getDisplayName(it)}</div>
+            <div class="name">${getDisplayNameBoth(it)}</div>
           </div>
-          <span class="badge">${t('badgeWeapon')}</span>
+          <span class="badge">${tr('badgeWeapon')}</span>
         </div>
       `).join('');
 
@@ -560,6 +623,7 @@
       });
     }
 
+    /* ===================== RENDER: TREE ===================== */
     function renderTreeView(){
       const treeEl = document.getElementById('treeView');
       treeEl.innerHTML = '';
@@ -568,7 +632,7 @@
       const weapon = itemsById.get(String(currentWeaponId));
       const weaponName = getDisplayName(weapon);
 
-      document.getElementById('detailsTitle').textContent = t('componentsTitle', weaponName, craftQty);
+      document.getElementById('detailsTitle').textContent = tr('components', weaponName, craftQty);
       setIconsInfo();
 
       const top = document.createElement('div');
@@ -580,7 +644,7 @@
             <div class="name">${weaponName}</div>
           </div>
           <div class="right">
-            <span class="badge">${t('badgeWeapon')}</span>
+            <span class="badge">${tr('badgeWeapon')}</span>
             <span class="qty">x${craftQty}</span>
           </div>
         </div>
@@ -591,7 +655,7 @@
       const childrenEl = top.querySelector('.node-children');
       const recipe = recipeByItemId.get(String(currentWeaponId)) || [];
       if (recipe.length === 0){
-        childrenEl.innerHTML = `<div class="small">${t('noRecipe')}</div>`;
+        childrenEl.innerHTML = `<div class="small">${tr('noRecipe')}</div>`;
         return;
       }
 
@@ -601,11 +665,10 @@
         childrenEl.appendChild(renderTreeNode(compId, compQty));
       }
 
-      const tip = document.createElement('div');
-      tip.className = 'small';
-      tip.style.marginTop = '8px';
-      tip.textContent = t('tipExpand');
-      treeEl.appendChild(tip);
+      const hint = document.createElement('div');
+      hint.className = 'hint';
+      hint.textContent = tr('hintExpand');
+      treeEl.appendChild(hint);
     }
 
     function renderTreeNode(itemId, totalQty){
@@ -623,8 +686,8 @@
             <div class="name">${name}</div>
           </div>
           <div class="right">
-            <span class="badge">${canExpand ? t('badgeCraft') : t('badgeBase')}</span>
-            ${canExpand ? `<button class="expand-btn" type="button">${t('expand')}</button>` : `<span></span>`}
+            <span class="badge">${canExpand ? tr('badgeCraft') : tr('badgeBase')}</span>
+            ${canExpand ? `<button class="expand-btn" type="button">${tr('expand')}</button>` : `<span></span>`}
             <span class="qty">x${totalQty}</span>
           </div>
         </div>
@@ -640,7 +703,7 @@
           e.stopPropagation();
 
           const openNow = wrap.classList.toggle('open');
-          btn.textContent = openNow ? t('collapse') : t('expand');
+          btn.textContent = openNow ? tr('collapse') : tr('expand');
 
           if (openNow && childrenEl.childElementCount === 0){
             for (const r of recipe){
@@ -654,16 +717,25 @@
       return wrap;
     }
 
+    /* ===================== RENDER: TOTAL (COST TABLE) ===================== */
     function renderTotalView(){
       const craftQty = Math.max(1, Number(document.getElementById('craftQty').value || 1));
       const weapon = itemsById.get(String(currentWeaponId));
       const weaponName = getDisplayName(weapon);
 
-      document.getElementById('detailsTitle').textContent = t('totalTitle', weaponName, craftQty);
+      document.getElementById('detailsTitle').textContent =
+        tr('totalMaterialsTitle', weaponName, craftQty);
+
       setIconsInfo();
 
       const totals = new Map();
-      computeTotals(String(currentWeaponId), craftQty, totals);
+
+      if (currentMode === 'direct'){
+        computeTotalsDirectOnly(String(currentWeaponId), craftQty, totals);
+      } else {
+        // total/base both are base-materials recursive
+        computeTotalsRecursive(String(currentWeaponId), craftQty, totals);
+      }
 
       const rows = Array.from(totals.entries())
         .map(([id, req]) => {
@@ -683,23 +755,23 @@
 
       const sumEl = document.getElementById('costSummary');
       sumEl.innerHTML = `
-        <div><div class="k">${t('sumCraftQty')}</div><div class="v">x${craftQty}</div></div>
-        <div><div class="k">${t('sumTotalRequired')}</div><div class="v">${totalReq}</div></div>
-        <div><div class="k">${t('sumTotalHave')}</div><div class="v">${totalHave}</div></div>
-        <div><div class="k">${t('sumTotalNeed')}</div><div class="v">${totalNeed}</div></div>
-        <div><div class="k">${t('sumTotalCost')}</div><div class="v">${formatAdena(totalCost)}</div></div>
+        <div><div class="k">${tr('summaryCraftQty')}</div><div class="v">x${craftQty}</div></div>
+        <div><div class="k">${tr('summaryTotalReq')}</div><div class="v">${totalReq}</div></div>
+        <div><div class="k">${tr('summaryTotalHave')}</div><div class="v">${totalHave}</div></div>
+        <div><div class="k">${tr('summaryTotalNeed')}</div><div class="v">${totalNeed}</div></div>
+        <div><div class="k">${tr('summaryTotalCost')}</div><div class="v">${formatAdena(totalCost)}</div></div>
       `;
 
       let html = `
         <table>
           <thead>
             <tr>
-              <th>${t('thMaterial')}</th>
-              <th class="num">${t('thRequired')}</th>
-              <th class="num">${t('thHave')}</th>
-              <th class="num">${t('thNeed')}</th>
-              <th class="num">${t('thPrice')}</th>
-              <th class="num">${t('thCost')}</th>
+              <th>${tr('thMaterial')}</th>
+              <th class="num">${tr('thRequired')}</th>
+              <th class="num">${tr('thHave')}</th>
+              <th class="num">${tr('thNeed')}</th>
+              <th class="num">${tr('thPrice')}</th>
+              <th class="num">${tr('thCost')}</th>
             </tr>
           </thead>
           <tbody>
@@ -734,7 +806,7 @@
           </tbody>
           <tfoot>
             <tr class="tfoot">
-              <td colspan="5" class="num">${t('tfootTotal')}</td>
+              <td colspan="5" class="num">${tr('footTotalCost')}</td>
               <td class="num">${formatAdena(totalCost)}</td>
             </tr>
           </tfoot>
@@ -743,10 +815,10 @@
 
       document.getElementById('totalTableWrap').innerHTML = html;
 
-      document.querySelectorAll('#totalTableWrap tr[data-id]').forEach(tr => {
-        const id = tr.getAttribute('data-id');
-        const haveInput = tr.querySelector('.haveInput');
-        const priceInput = tr.querySelector('.priceInput');
+      document.querySelectorAll('#totalTableWrap tr[data-id]').forEach(trEl => {
+        const id = trEl.getAttribute('data-id');
+        const haveInput = trEl.querySelector('.haveInput');
+        const priceInput = trEl.querySelector('.priceInput');
 
         const commitHave = () => {
           const v = toNonNegInt(haveInput.value);
@@ -775,61 +847,118 @@
       });
     }
 
-    function toNonNegInt(s){
-      const cleaned = String(s || '').replace(/[^\d]/g,'');
-      const n = Number(cleaned || 0);
-      return Math.max(0, Math.floor(n));
-    }
-    function formatAdena(n){
-      const x = Math.floor(Number(n || 0));
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    }
-
+    /* ===================== SCREEN REFRESH ===================== */
     function refreshCurrentDetails(){
       if (!currentWeaponId) return;
       const tree = document.getElementById('treeView');
       const total = document.getElementById('totalView');
 
+      // Active button styling
+      const bTree = document.getElementById('btnTree');
+      const bTotal = document.getElementById('btnTotal');
+      const bBase = document.getElementById('btnBase');
+      const bDirect = document.getElementById('btnDirect');
+
+      bTree.classList.remove('active');
+      bTotal.classList.remove('active');
+      bBase.classList.remove('active');
+      bDirect.classList.remove('active');
+
       if (currentMode === 'tree'){
+        bTree.classList.add('active');
         tree.style.display = 'block';
         total.style.display = 'none';
         renderTreeView();
       } else {
         tree.style.display = 'none';
         total.style.display = 'block';
+
+        if (currentMode === 'total') bTotal.classList.add('active');
+        if (currentMode === 'base') bBase.classList.add('active');
+        if (currentMode === 'direct') bDirect.classList.add('active');
+
         renderTotalView();
       }
-    }
-
-    function showTree(){
-      currentMode = 'tree';
-      document.getElementById('btnTree').classList.add('active');
-      document.getElementById('btnTotal').classList.remove('active');
-      refreshCurrentDetails();
-    }
-
-    function showTotal(){
-      currentMode = 'total';
-      document.getElementById('btnTotal').classList.add('active');
-      document.getElementById('btnTree').classList.remove('active');
-      refreshCurrentDetails();
     }
 
     function openWeapon(id){
       currentWeaponId = String(id);
       showDetails();
       currentMode = 'tree';
-      document.getElementById('btnTree').classList.add('active');
-      document.getElementById('btnTotal').classList.remove('active');
       refreshCurrentDetails();
     }
 
+    /* ===================== EVENTS ===================== */
+    function bindEvents(){
+      document.getElementById('searchInput').addEventListener('input', renderWeaponsList);
+
+      document.getElementById('btnBack').addEventListener('click', () => {
+        showList();
+        renderWeaponsList();
+      });
+
+      document.getElementById('craftQty').addEventListener('change', () => {
+        const v = Math.max(1, toNonNegInt(document.getElementById('craftQty').value));
+        document.getElementById('craftQty').value = v;
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnTree').addEventListener('click', () => {
+        currentMode = 'tree';
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnTotal').addEventListener('click', () => {
+        currentMode = 'total';
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnBase').addEventListener('click', () => {
+        // kept for UI parity; behaves as base-only recursive (same as total)
+        currentMode = 'base';
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnDirect').addEventListener('click', () => {
+        currentMode = 'direct';
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnReset').addEventListener('click', () => {
+        HAVE = {};
+        PRICE = {};
+        saveHave();
+        savePrice();
+        refreshCurrentDetails();
+      });
+
+      document.getElementById('btnLang').addEventListener('click', () => {
+        LANG = (LANG === 'en') ? 'ru' : 'en';
+        saveLang();
+        applyI18nStatic();
+
+        // update status line text even on list
+        if (!currentWeaponId){
+          renderWeaponsList();
+        } else {
+          refreshCurrentDetails();
+        }
+      });
+
+      // Top tab (only Weapons for now) — keep it visible always
+      document.getElementById('tabWeapons').addEventListener('click', () => {
+        showList();
+        renderWeaponsList();
+      });
+    }
+
+    /* ===================== INIT ===================== */
     async function init(){
       loadUserData();
-      applyStaticTranslations();
+      applyI18nStatic();
 
       const status = document.getElementById('statusLine');
-      status.textContent = t('loading');
+      status.textContent = tr('loading');
 
       try{
         ITEMS = await loadCSV(ITEMS_URL);
@@ -840,6 +969,8 @@
           it.category = String(it.category || '').trim();
           it.craftable = String(it.craftable || '').trim();
           it.icon = String(it.icon || '').trim();
+          it.name_en = String(it.name_en || '').trim();
+          it.name_ru = String(it.name_ru || '').trim();
         });
 
         RECIPES.forEach(r => {
@@ -851,40 +982,12 @@
         rebuildIndexes();
         renderWeaponsList();
       } catch (e){
-        status.textContent = 'ERROR: ' + (e && e.message ? e.message : String(e));
+        console.error(e);
+        status.textContent = 'Error loading data. Check console.';
       }
     }
 
-    // events
-    document.getElementById('searchInput').addEventListener('input', renderWeaponsList);
-    document.getElementById('btnBack').addEventListener('click', showList);
-    document.getElementById('btnTree').addEventListener('click', showTree);
-    document.getElementById('btnTotal').addEventListener('click', showTotal);
-
-    document.getElementById('craftQty').addEventListener('input', () => {
-      const el = document.getElementById('craftQty');
-      const v = String(el.value || '').replace(/[^\d]/g,'');
-      el.value = v === '' ? '1' : v;
-    });
-    document.getElementById('craftQty').addEventListener('change', () => {
-      const el = document.getElementById('craftQty');
-      const n = Math.max(1, Number(el.value || 1));
-      el.value = String(n);
-      refreshCurrentDetails();
-    });
-
-    document.getElementById('btnLang').addEventListener('click', () => {
-      const next = (LANG === 'ru') ? 'en' : 'ru';
-      setLang(next);
-    });
-
-    // telegram
-    try{
-      if (window.Telegram && Telegram.WebApp){
-        Telegram.WebApp.ready();
-      }
-    }catch(e){}
-
+    bindEvents();
     init();
   </script>
 </body>
