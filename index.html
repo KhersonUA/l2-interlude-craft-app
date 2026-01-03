@@ -249,6 +249,8 @@
       color: #fde68a;
     }
 
+    .subtab-icon{ margin-right:6px; opacity:.85; }
+
     table{
       width:100%;
       border-collapse:collapse;
@@ -393,25 +395,21 @@
     };
 
     // ======== SUBTABS (values must match your Items column "subtype" - case-insensitive) ========
-    // Armor includes: Gloves/Boots/Helmet/Shield/Sigils and Shield is before Sigils (as requested).
+    // Weapons: Fists only (Fist/First removed)
+    // Armor: Shield before Sigils (as requested)
     const SUBTABS = {
       weapon: [
         'Daggers',
-        'One handed sords',
         'One handed swords',
         'Two handed swords',
         'Bows',
         'One handed blunts',
-        'Two nanded blunts',
         'Two handed blunts',
         'Spears',
-        'Fist',
-        'First',
+        'Fists',
         'One handed magic',
         'Two Handed magic',
-        'Two handed magic',
-        'Dual Sword',
-        'Dual Swords'
+        'Dual Sword'
       ],
       armor: [
         'Heavy Armor',
@@ -429,6 +427,47 @@
         'Rings'
       ]
     };
+
+    // Short UI labels (UI only; filtering uses original subtype text)
+    const SUBTYPE_SHORT = {
+      'One handed swords': '1H Swords',
+      'Two handed swords': '2H Swords',
+      'One handed blunts': '1H Blunts',
+      'Two handed blunts': '2H Blunts',
+      'One handed magic': '1H Magic',
+      'Two Handed magic': '2H Magic',
+      'Dual Sword': 'Dual Swords'
+    };
+
+    // Subtype icons (emoji; Telegram-safe, no external CDN)
+    const SUBTYPE_ICON = {
+      'Daggers':'🗡️',
+      'One handed swords':'⚔️',
+      'Two handed swords':'⚔️',
+      'Bows':'🏹',
+      'One handed blunts':'🔨',
+      'Two handed blunts':'🔨',
+      'Spears':'🔱',
+      'Fists':'🥊',
+      'One handed magic':'🔮',
+      'Two Handed magic':'📜',
+      'Dual Sword':'⚔️',
+
+      'Heavy Armor':'🛡️',
+      'Light Armor':'🥋',
+      'Magic Armor':'🧥',
+      'Gloves':'🧤',
+      'Boots':'👢',
+      'Helmet':'🪖',
+      'Shield':'🛡️',
+      'Sigils':'✨',
+
+      'Necklaces':'📿',
+      'Earrings':'💎',
+      'Rings':'💍'
+    };
+
+    const TIER_ORDER = { C:20, B:30, A:40, S:50, S80:60, S84:70 };
 
     // ======== RUNTIME DATA (current active view) ========
     let ITEMS = [];
@@ -710,8 +749,7 @@
     // ======== Tier sorting for Weapons ========
     function tierRank(it){
       const t = String(it?.tier || '').trim().toUpperCase();
-      const map = { 'D':10, 'C':20, 'B':30, 'A':40, 'S':50, 'S80':60, 'S84':70 };
-      return map[t] ?? 999;
+      return TIER_ORDER[t] ?? 999;
     }
     function itemSort(a, b){
       if (activeCategory === 'weapon'){
@@ -728,6 +766,13 @@
         .toLowerCase()
         .replace(/\s+/g,' ')
         .trim();
+    }
+
+    function subtypeLabel(s){
+      return SUBTYPE_SHORT[s] || s;
+    }
+    function subtypeIcon(s){
+      return SUBTYPE_ICON[s] || '•';
     }
 
     // ======== CALCULATION ========
@@ -828,15 +873,6 @@
       if (allBtn) allBtn.classList.add('active');
     }
 
-    function resetSubtypeFilterUI(){
-      activeSubtypeFilter = 'all';
-      const box = document.getElementById('subtypeFilter');
-      if (!box) return;
-      box.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-      const allBtn = box.querySelector('[data-subtype="all"]');
-      if (allBtn) allBtn.classList.add('active');
-    }
-
     function bindTierFilter(){
       const box = document.getElementById('tierFilter');
       if (!box) return;
@@ -887,20 +923,12 @@
 
       box.style.display = 'flex';
 
-      // Build unique list by normalized key (avoid duplicates like "Two Handed magic" vs "Two handed magic")
-      const seen = new Set();
-      const uniq = [];
-      for (const s of list){
-        const k = normKey(s);
-        if (!k || seen.has(k)) continue;
-        seen.add(k);
-        uniq.push(s);
-      }
-
       let html = `<button class="btn ${activeSubtypeFilter==='all'?'active':''}" data-subtype="all">${tr('all')}</button>`;
-      for (const s of uniq){
+      for (const s of list){
         const isActive = (activeSubtypeFilter !== 'all' && normKey(activeSubtypeFilter) === normKey(s));
-        html += `<button class="btn ${isActive?'active':''}" data-subtype="${s.replace(/"/g,'&quot;')}">${s}</button>`;
+        const label = subtypeLabel(s);
+        const ic = subtypeIcon(s);
+        html += `<button class="btn ${isActive?'active':''}" data-subtype="${s.replace(/"/g,'&quot;')}"><span class="subtab-icon">${ic}</span>${label}</button>`;
       }
       box.innerHTML = html;
 
