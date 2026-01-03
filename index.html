@@ -293,8 +293,6 @@
       <input id="craftQty" type="number" min="1" step="1" value="1"/>
       <button id="btnTree" class="btn active">TREE VIEW</button>
       <button id="btnTotal" class="btn">TOTAL MATERIALS</button>
-      <button id="btnBase" class="btn">BASE</button>
-      <button id="btnDirect" class="btn">DIRECT</button>
       <button id="btnReset" class="btn">Reset have/price</button>
       <div class="small" id="iconsInfo"></div>
     </div>
@@ -308,7 +306,7 @@
   </div>
 
   <script>
-    // ======== DATA SOURCES (your new split sheets) ========
+    // ======== DATA SOURCES (split sheets) ========
     const URLS = {
       weapon: {
         items:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv',
@@ -332,17 +330,17 @@
 
     // cache per category
     const CACHE = {
-      items: new Map(),   // weapon|armor|jewelry -> items[]
-      recipes: new Map(), // weapon|armor|jewelry -> recipes[]
-      allItems: null,     // merged all items (weap+armor+jew)
-      allRecipes: null    // merged all recipes
+      items: new Map(),    // weapon|armor|jewelry -> items[]
+      recipes: new Map(),  // weapon|armor|jewelry -> recipes[]
+      allItems: null,      // merged all items (weap+armor+jew)
+      allRecipes: null     // merged all recipes
     };
 
     // tabs: weapon | armor | jewelry | materials
     let activeCategory = 'weapon';
     let currentItemId = null;
 
-    // modes: tree | total | base | direct
+    // modes: tree | total
     let currentMode = 'tree';
 
     let iconFilled = 0, iconTotal = 0;
@@ -370,8 +368,6 @@
         craftQty: 'Craft quantity',
         treeView: 'TREE VIEW',
         totalMaterials: 'TOTAL MATERIALS',
-        base: 'BASE',
-        direct: 'DIRECT',
         reset: 'Reset have/price',
         noRecipe: 'No recipe found for this item.',
         badgeBase: 'base',
@@ -401,8 +397,6 @@
         craftQty: 'Количество крафта',
         treeView: 'TREE VIEW',
         totalMaterials: 'ИТОГО МАТЕРИАЛЫ',
-        base: 'BASE',
-        direct: 'DIRECT',
         reset: 'Сброс have/price',
         noRecipe: 'Рецепт для этого предмета не найден.',
         badgeBase: 'база',
@@ -440,8 +434,6 @@
       document.getElementById('lblCraftQty').textContent = tr('craftQty');
       document.getElementById('btnTree').textContent = tr('treeView');
       document.getElementById('btnTotal').textContent = tr('totalMaterials');
-      document.getElementById('btnBase').textContent = tr('base');
-      document.getElementById('btnDirect').textContent = tr('direct');
       document.getElementById('btnReset').textContent = tr('reset');
 
       document.getElementById('btnLang').textContent = tr('langBtn');
@@ -496,6 +488,7 @@
         it.icon = String(it.icon || '').trim();
         it.name_en = String(it.name_en || '').trim();
         it.name_ru = String(it.name_ru || '').trim();
+        it.tier = String(it.tier || '').trim(); // NEW: tier column support
       });
       return items.filter(it => it.id);
     }
@@ -568,6 +561,29 @@
 
     function isCraftable(it){
       return String(it?.craftable || '').toLowerCase() === 'yes';
+    }
+
+    // NEW: tier sorting for Weapons
+    function tierRank(it){
+      const t = String(it?.tier || '').trim().toUpperCase();
+      const map = {
+        'D': 10,
+        'C': 20,
+        'B': 30,
+        'A': 40,
+        'S': 50,
+        'S80': 60,
+        'S84': 70
+      };
+      return map[t] ?? 999;
+    }
+    function itemSort(a, b){
+      if (activeCategory === 'weapon'){
+        const ra = tierRank(a);
+        const rb = tierRank(b);
+        if (ra !== rb) return ra - rb;
+      }
+      return getDisplayName(a).localeCompare(getDisplayName(b));
     }
 
     function setIconsInfo(){
@@ -643,7 +659,7 @@
         };
       }));
 
-      // Merge items by id (prefer first occurrence, but keep stable)
+      // Merge items by id (prefer first occurrence)
       const itemsMap = new Map();
       for (const block of loads){
         for (const it of block.items){
@@ -652,7 +668,7 @@
         }
       }
 
-      // Merge recipes; allow duplicates but we can de-dup by item_id+component_id+qty
+      // Merge recipes; de-dup by item_id+component_id+qty
       const recKey = (r)=>`${r.item_id}::${r.component_id}::${Number(r.qty||0)}`;
       const recSet = new Set();
       const allRecipes = [];
@@ -688,21 +704,11 @@
       }
     }
 
-    function computeTotalsDirectOnly(itemId, craftQty, totalsMap){
-      const recipe = recipeByItemId.get(String(itemId)) || [];
-      for (const row of recipe){
-        const key = String(row.component_id);
-        const add = Number(row.qty || 0) * Number(craftQty || 0);
-        totalsMap.set(key, (totalsMap.get(key) || 0) + add);
-      }
-    }
-
     function filterItemsByActiveCategory(){
       const cat = activeCategory;
 
       if (cat === 'materials'){
-        // Materials tab uses merged data
-        // ONLY materials that are craftable
+        // ONLY materials that are craftable (from merged dataset)
         return ITEMS.filter(it =>
           String(it.category || '').toLowerCase() === 'material' &&
           isCraftable(it)
@@ -723,6 +729,9 @@
         const ru = (it.name_ru || '').toLowerCase();
         return en.includes(q) || ru.includes(q);
       });
+
+      // NEW: tier sorting on Weapons
+      items.sort(itemSort);
 
       document.getElementById('statusLine').textContent =
         `${tr('itemsCount', items.length)}  |  ${tr('icons', iconFilled, iconTotal)}`;
@@ -841,11 +850,7 @@
       setIconsInfo();
 
       const totals = new Map();
-      if (currentMode === 'direct'){
-        computeTotalsDirectOnly(String(currentItemId), craftQty, totals);
-      } else {
-        computeTotalsRecursive(String(currentItemId), craftQty, totals);
-      }
+      computeTotalsRecursive(String(currentItemId), craftQty, totals);
 
       const rows = Array.from(totals.entries())
         .map(([id, req]) => {
@@ -954,18 +959,15 @@
 
     function refreshCurrentDetails(){
       if (!currentItemId) return;
+
       const tree = document.getElementById('treeView');
       const total = document.getElementById('totalView');
 
       const bTree = document.getElementById('btnTree');
       const bTotal = document.getElementById('btnTotal');
-      const bBase = document.getElementById('btnBase');
-      const bDirect = document.getElementById('btnDirect');
 
       bTree.classList.remove('active');
       bTotal.classList.remove('active');
-      bBase.classList.remove('active');
-      bDirect.classList.remove('active');
 
       if (currentMode === 'tree'){
         bTree.classList.add('active');
@@ -973,13 +975,9 @@
         total.style.display = 'none';
         renderTreeView();
       } else {
+        bTotal.classList.add('active');
         tree.style.display = 'none';
         total.style.display = 'block';
-
-        if (currentMode === 'total') bTotal.classList.add('active');
-        if (currentMode === 'base') bBase.classList.add('active');
-        if (currentMode === 'direct') bDirect.classList.add('active');
-
         renderTotalView();
       }
     }
@@ -1003,7 +1001,7 @@
 
       try{
         if (tab === 'materials'){
-          // Materials uses merged dataset
+          // Materials uses merged dataset (all items + all recipes)
           await loadAllMergedData();
           ITEMS = CACHE.allItems || [];
           RECIPES = CACHE.allRecipes || [];
@@ -1040,16 +1038,6 @@
 
       document.getElementById('btnTotal').addEventListener('click', () => {
         currentMode = 'total';
-        refreshCurrentDetails();
-      });
-
-      document.getElementById('btnBase').addEventListener('click', () => {
-        currentMode = 'base';
-        refreshCurrentDetails();
-      });
-
-      document.getElementById('btnDirect').addEventListener('click', () => {
-        currentMode = 'direct';
         refreshCurrentDetails();
       });
 
