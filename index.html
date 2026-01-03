@@ -194,6 +194,49 @@
     }
     .expand-btn:hover{ background:#122546; }
 
+    /* Tier badge */
+    .badge-tier{
+      font-size:11px;
+      color:var(--text);
+      border:1px solid var(--border);
+      padding:2px 8px;
+      border-radius:999px;
+      text-transform:uppercase;
+      font-weight:700;
+      letter-spacing:.2px;
+      opacity:.95;
+    }
+    .badge-tier.c{
+      background: rgba(34,197,94,.18);   /* green */
+      border-color: rgba(34,197,94,.55);
+      color: #bbf7d0;
+    }
+    .badge-tier.b{
+      background: rgba(239,68,68,.18);   /* red */
+      border-color: rgba(239,68,68,.55);
+      color: #fecaca;
+    }
+    .badge-tier.a{
+      background: rgba(59,130,246,.18);  /* blue */
+      border-color: rgba(59,130,246,.55);
+      color: #bfdbfe;
+    }
+    .badge-tier.s{
+      background: rgba(210,180,140,.22); /* light brown */
+      border-color: rgba(210,180,140,.55);
+      color: #f5deb3;
+    }
+    .badge-tier.s80{
+      background: rgba(101,67,33,.28);   /* dark brown */
+      border-color: rgba(101,67,33,.60);
+      color: #e7d3b3;
+    }
+    .badge-tier.s84{
+      background: rgba(245,158,11,.22);  /* gold */
+      border-color: rgba(245,158,11,.65);
+      color: #fde68a;
+    }
+
     table{
       width:100%;
       border-collapse:collapse;
@@ -277,6 +320,18 @@
   <!-- LIST SCREEN -->
   <div id="screenList">
     <input id="searchInput" type="text" placeholder="Search item" />
+
+    <!-- Tier filter (only for Weapons) -->
+    <div id="tierFilter" class="toolbar" style="display:none; margin-top:10px;">
+      <button class="btn active" data-tier="all">ALL</button>
+      <button class="btn" data-tier="C">C</button>
+      <button class="btn" data-tier="B">B</button>
+      <button class="btn" data-tier="A">A</button>
+      <button class="btn" data-tier="S">S</button>
+      <button class="btn" data-tier="S80">S80</button>
+      <button class="btn" data-tier="S84">S84</button>
+    </div>
+
     <div class="hint" id="statusLine">Loading data...</div>
     <div class="list" id="itemsList"></div>
   </div>
@@ -342,6 +397,9 @@
 
     // modes: tree | total
     let currentMode = 'tree';
+
+    // tier filter: all | C | B | A | S | S80 | S84
+    let activeTierFilter = 'all';
 
     let iconFilled = 0, iconTotal = 0;
 
@@ -488,7 +546,7 @@
         it.icon = String(it.icon || '').trim();
         it.name_en = String(it.name_en || '').trim();
         it.name_ru = String(it.name_ru || '').trim();
-        it.tier = String(it.tier || '').trim(); // NEW: tier column support
+        it.tier = String(it.tier || '').trim(); // tier column support
       });
       return items.filter(it => it.id);
     }
@@ -563,7 +621,7 @@
       return String(it?.craftable || '').toLowerCase() === 'yes';
     }
 
-    // NEW: tier sorting for Weapons
+    // tier sorting for Weapons
     function tierRank(it){
       const t = String(it?.tier || '').trim().toUpperCase();
       const map = {
@@ -659,7 +717,7 @@
         };
       }));
 
-      // Merge items by id (prefer first occurrence)
+      // Merge items by id
       const itemsMap = new Map();
       for (const block of loads){
         for (const it of block.items){
@@ -704,6 +762,54 @@
       }
     }
 
+    // ======== Tier filter helpers ========
+    function resetTierFilterUI(){
+      activeTierFilter = 'all';
+      const box = document.getElementById('tierFilter');
+      if (!box) return;
+      box.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      const allBtn = box.querySelector('[data-tier="all"]');
+      if (allBtn) allBtn.classList.add('active');
+    }
+
+    function bindTierFilter(){
+      const box = document.getElementById('tierFilter');
+      if (!box) return;
+
+      box.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeTierFilter = btn.dataset.tier;
+
+          box.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          renderItemsList();
+        });
+      });
+    }
+
+    function updateTierCounts(sourceItems){
+      const box = document.getElementById('tierFilter');
+      if (!box) return;
+
+      const counts = { C:0, B:0, A:0, S:0, S80:0, S84:0 };
+      for (const it of sourceItems){
+        const t = String(it.tier || '').trim().toUpperCase();
+        if (counts.hasOwnProperty(t)) counts[t]++;
+      }
+      const total = sourceItems.length;
+
+      box.querySelectorAll('button[data-tier]').forEach(btn => {
+        const t = btn.dataset.tier;
+        if (t === 'all'){
+          btn.textContent = `ALL (${total})`;
+        } else {
+          const c = counts[t] ?? 0;
+          btn.textContent = `${t} (${c})`;
+        }
+      });
+    }
+
     function filterItemsByActiveCategory(){
       const cat = activeCategory;
 
@@ -723,28 +829,51 @@
       const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
       const listEl = document.getElementById('itemsList');
 
-      const items = filterItemsByActiveCategory().filter(it => {
+      // base items (category + search)
+      const baseItems = filterItemsByActiveCategory().filter(it => {
         if (!q) return true;
         const en = (it.name_en || '').toLowerCase();
         const ru = (it.name_ru || '').toLowerCase();
         return en.includes(q) || ru.includes(q);
       });
 
-      // NEW: tier sorting on Weapons
+      // counts for tier buttons (based on search, before tier filter)
+      if (activeCategory === 'weapon'){
+        updateTierCounts(baseItems);
+      }
+
+      // apply tier filter (only weapons)
+      const items = baseItems.filter(it => {
+        if (activeCategory === 'weapon' && activeTierFilter !== 'all'){
+          const tier = String(it.tier || '').trim().toUpperCase();
+          return tier === activeTierFilter;
+        }
+        return true;
+      });
+
+      // sort (tier + name for weapons, name for others)
       items.sort(itemSort);
 
       document.getElementById('statusLine').textContent =
         `${tr('itemsCount', items.length)}  |  ${tr('icons', iconFilled, iconTotal)}`;
 
-      listEl.innerHTML = items.map(it => `
-        <div class="item-row" data-id="${String(it.id)}">
-          <div class="item-left">
-            ${iconOrDot(it)}
-            <div class="name">${getDisplayNameBoth(it)}</div>
+      listEl.innerHTML = items.map(it => {
+        const isWeaponsTab = (activeCategory === 'weapon');
+        const tier = String(it.tier || '').trim().toUpperCase();
+        const tierCls = tier.toLowerCase();
+        return `
+          <div class="item-row" data-id="${String(it.id)}">
+            <div class="item-left">
+              ${iconOrDot(it)}
+              <div class="name">${getDisplayNameBoth(it)}</div>
+            </div>
+            <div class="right">
+              ${isWeaponsTab && tier ? `<span class="badge-tier ${tierCls}">${tier}</span>` : ``}
+              <span class="badge">${String(it.category || '').toLowerCase()}</span>
+            </div>
           </div>
-          <span class="badge">${String(it.category || '').toLowerCase()}</span>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       listEl.querySelectorAll('.item-row').forEach(row => {
         row.addEventListener('click', () => openItem(row.getAttribute('data-id')));
@@ -865,7 +994,6 @@
 
       const totalCost = rows.reduce((s,r)=>s+r.cost, 0);
 
-      // SUMMARY: ONLY Craft qty + Total cost
       const sumEl = document.getElementById('costSummary');
       sumEl.innerHTML = `
         <div><div class="k">${tr('summaryCraftQty')}</div><div class="v">x${craftQty}</div></div>
@@ -997,11 +1125,21 @@
       document.getElementById('tabJewelry').classList.toggle('active', tab === 'jewelry');
       document.getElementById('tabMaterials').classList.toggle('active', tab === 'materials');
 
+      // show/hide tier filter
+      const tf = document.getElementById('tierFilter');
+      if (tf){
+        if (tab === 'weapon'){
+          tf.style.display = 'flex';
+        } else {
+          tf.style.display = 'none';
+          resetTierFilterUI();
+        }
+      }
+
       showList();
 
       try{
         if (tab === 'materials'){
-          // Materials uses merged dataset (all items + all recipes)
           await loadAllMergedData();
           ITEMS = CACHE.allItems || [];
           RECIPES = CACHE.allRecipes || [];
@@ -1065,6 +1203,8 @@
       document.getElementById('tabArmors').addEventListener('click', () => setActiveTab('armor'));
       document.getElementById('tabJewelry').addEventListener('click', () => setActiveTab('jewelry'));
       document.getElementById('tabMaterials').addEventListener('click', () => setActiveTab('materials'));
+
+      bindTierFilter();
     }
 
     async function init(){
