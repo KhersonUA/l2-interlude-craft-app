@@ -67,6 +67,18 @@
       box-shadow: 0 0 0 1px rgba(245,158,11,.25) inset;
     }
 
+    /* Mobile-friendly horizontal scroller for filters/subtabs */
+    .hscroll{
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      padding-bottom:2px;
+      margin-top:10px;
+    }
+    .hscroll::-webkit-scrollbar{ height:6px; }
+    .hscroll::-webkit-scrollbar-thumb{ background:#1f2f4e; border-radius:999px; }
+
     .toolbar{
       display:flex;
       align-items:center;
@@ -194,7 +206,7 @@
     }
     .expand-btn:hover{ background:#122546; }
 
-    /* Tier badge */
+    /* Tier badge (Weapons list only) */
     .badge-tier{
       font-size:11px;
       color:var(--text);
@@ -321,8 +333,11 @@
   <div id="screenList">
     <input id="searchInput" type="text" placeholder="Search item" />
 
+    <!-- Subtype subtabs (Weapons/Armors/Jewelry only) -->
+    <div id="subtypeFilter" class="hscroll" style="display:none;"></div>
+
     <!-- Tier filter (only for Weapons) -->
-    <div id="tierFilter" class="toolbar" style="display:none; margin-top:10px;">
+    <div id="tierFilter" class="hscroll" style="display:none;">
       <button class="btn active" data-tier="all">ALL</button>
       <button class="btn" data-tier="C">C</button>
       <button class="btn" data-tier="B">B</button>
@@ -361,7 +376,7 @@
   </div>
 
   <script>
-    // ======== DATA SOURCES (split sheets) ========
+    // ======== DATA SOURCES (your links) ========
     const URLS = {
       weapon: {
         items:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv',
@@ -375,6 +390,44 @@
         items:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=923026496&single=true&output=csv',
         recipes: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=2033866316&single=true&output=csv'
       }
+    };
+
+    // ======== SUBTABS (values must match your Items column "subtype" - case-insensitive) ========
+    // Armor includes: Gloves/Boots/Helmet/Shield/Sigils and Shield is before Sigils (as requested).
+    const SUBTABS = {
+      weapon: [
+        'Daggers',
+        'One handed sords',
+        'One handed swords',
+        'Two handed swords',
+        'Bows',
+        'One handed blunts',
+        'Two nanded blunts',
+        'Two handed blunts',
+        'Spears',
+        'Fist',
+        'First',
+        'One handed magic',
+        'Two Handed magic',
+        'Two handed magic',
+        'Dual Sword',
+        'Dual Swords'
+      ],
+      armor: [
+        'Heavy Armor',
+        'Light Armor',
+        'Magic Armor',
+        'Gloves',
+        'Boots',
+        'Helmet',
+        'Shield',
+        'Sigils'
+      ],
+      jewelry: [
+        'Necklaces',
+        'Earrings',
+        'Rings'
+      ]
     };
 
     // ======== RUNTIME DATA (current active view) ========
@@ -398,8 +451,9 @@
     // modes: tree | total
     let currentMode = 'tree';
 
-    // tier filter: all | C | B | A | S | S80 | S84
-    let activeTierFilter = 'all';
+    // filters
+    let activeTierFilter = 'all';     // all | C | B | A | S | S80 | S84
+    let activeSubtypeFilter = 'all';  // all | <subtab string>
 
     let iconFilled = 0, iconTotal = 0;
 
@@ -441,7 +495,8 @@
         thPrice: 'Price (1)',
         thCost: 'Cost',
         footTotalCost: 'TOTAL COST (ADENA)',
-        langBtn: 'RU'
+        langBtn: 'RU',
+        all: 'ALL'
       },
       ru: {
         tabs: { weapon:'Оружие', armor:'Броня', jewelry:'Бижутерия', materials:'Материалы' },
@@ -470,7 +525,8 @@
         thPrice: 'Цена (1)',
         thCost: 'Стоимость',
         footTotalCost: 'ИТОГО (АДЕНА)',
-        langBtn: 'EN'
+        langBtn: 'EN',
+        all: 'ALL'
       }
     };
 
@@ -495,6 +551,9 @@
       document.getElementById('btnReset').textContent = tr('reset');
 
       document.getElementById('btnLang').textContent = tr('langBtn');
+
+      renderSubtypeFilter();
+      // tier labels update on next renderItemsList()
     }
 
     function parseCSV(text){
@@ -546,7 +605,8 @@
         it.icon = String(it.icon || '').trim();
         it.name_en = String(it.name_en || '').trim();
         it.name_ru = String(it.name_ru || '').trim();
-        it.tier = String(it.tier || '').trim(); // tier column support
+        it.tier = String(it.tier || '').trim();        // NEW column
+        it.subtype = String(it.subtype || '').trim();  // NEW column
       });
       return items.filter(it => it.id);
     }
@@ -621,29 +681,6 @@
       return String(it?.craftable || '').toLowerCase() === 'yes';
     }
 
-    // tier sorting for Weapons
-    function tierRank(it){
-      const t = String(it?.tier || '').trim().toUpperCase();
-      const map = {
-        'D': 10,
-        'C': 20,
-        'B': 30,
-        'A': 40,
-        'S': 50,
-        'S80': 60,
-        'S84': 70
-      };
-      return map[t] ?? 999;
-    }
-    function itemSort(a, b){
-      if (activeCategory === 'weapon'){
-        const ra = tierRank(a);
-        const rb = tierRank(b);
-        if (ra !== rb) return ra - rb;
-      }
-      return getDisplayName(a).localeCompare(getDisplayName(b));
-    }
-
     function setIconsInfo(){
       document.getElementById('iconsInfo').textContent = tr('icons', iconFilled, iconTotal);
     }
@@ -668,6 +705,48 @@
     function formatAdena(n){
       const x = Math.floor(Number(n || 0));
       return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    // ======== Tier sorting for Weapons ========
+    function tierRank(it){
+      const t = String(it?.tier || '').trim().toUpperCase();
+      const map = { 'D':10, 'C':20, 'B':30, 'A':40, 'S':50, 'S80':60, 'S84':70 };
+      return map[t] ?? 999;
+    }
+    function itemSort(a, b){
+      if (activeCategory === 'weapon'){
+        const ra = tierRank(a);
+        const rb = tierRank(b);
+        if (ra !== rb) return ra - rb; // C -> ... -> S84
+      }
+      return getDisplayName(a).localeCompare(getDisplayName(b));
+    }
+
+    // ======== Normalization helpers for subtype matching (forgiving) ========
+    function normKey(s){
+      return String(s || '')
+        .toLowerCase()
+        .replace(/\s+/g,' ')
+        .trim();
+    }
+
+    // ======== CALCULATION ========
+    function computeTotalsRecursive(itemId, neededQty, totalsMap){
+      const it = itemsById.get(String(itemId));
+      const qty = Number(neededQty || 0);
+      const recipe = recipeByItemId.get(String(itemId)) || [];
+      const expand = it && isCraftable(it) && recipe.length > 0;
+
+      if (!it) return;
+
+      if (!expand){
+        const key = String(itemId);
+        totalsMap.set(key, (totalsMap.get(key) || 0) + qty);
+        return;
+      }
+      for (const row of recipe){
+        computeTotalsRecursive(row.component_id, qty * Number(row.qty || 0), totalsMap);
+      }
     }
 
     // ======== LOADERS (tab-based) ========
@@ -710,11 +789,7 @@
           loadCSV(URLS[c].items),
           loadCSV(URLS[c].recipes)
         ]);
-        return {
-          cat: c,
-          items: normalizeItems(itemsRaw),
-          recipes: normalizeRecipes(recipesRaw)
-        };
+        return { cat: c, items: normalizeItems(itemsRaw), recipes: normalizeRecipes(recipesRaw) };
       }));
 
       // Merge items by id
@@ -743,32 +818,22 @@
       CACHE.allRecipes = allRecipes;
     }
 
-    // ======== CALCULATION ========
-    function computeTotalsRecursive(itemId, neededQty, totalsMap){
-      const it = itemsById.get(String(itemId));
-      const qty = Number(neededQty || 0);
-      const recipe = recipeByItemId.get(String(itemId)) || [];
-      const expand = it && isCraftable(it) && recipe.length > 0;
-
-      if (!it) return;
-
-      if (!expand){
-        const key = String(itemId);
-        totalsMap.set(key, (totalsMap.get(key) || 0) + qty);
-        return;
-      }
-      for (const row of recipe){
-        computeTotalsRecursive(row.component_id, qty * Number(row.qty || 0), totalsMap);
-      }
-    }
-
-    // ======== Tier filter helpers ========
+    // ======== FILTER UI ========
     function resetTierFilterUI(){
       activeTierFilter = 'all';
       const box = document.getElementById('tierFilter');
       if (!box) return;
       box.querySelectorAll('button').forEach(b => b.classList.remove('active'));
       const allBtn = box.querySelector('[data-tier="all"]');
+      if (allBtn) allBtn.classList.add('active');
+    }
+
+    function resetSubtypeFilterUI(){
+      activeSubtypeFilter = 'all';
+      const box = document.getElementById('subtypeFilter');
+      if (!box) return;
+      box.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      const allBtn = box.querySelector('[data-subtype="all"]');
       if (allBtn) allBtn.classList.add('active');
     }
 
@@ -810,6 +875,46 @@
       });
     }
 
+    function renderSubtypeFilter(){
+      const box = document.getElementById('subtypeFilter');
+      if (!box) return;
+
+      const list = SUBTABS[activeCategory] || [];
+      if (!list.length){
+        box.style.display = 'none';
+        return;
+      }
+
+      box.style.display = 'flex';
+
+      // Build unique list by normalized key (avoid duplicates like "Two Handed magic" vs "Two handed magic")
+      const seen = new Set();
+      const uniq = [];
+      for (const s of list){
+        const k = normKey(s);
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        uniq.push(s);
+      }
+
+      let html = `<button class="btn ${activeSubtypeFilter==='all'?'active':''}" data-subtype="all">${tr('all')}</button>`;
+      for (const s of uniq){
+        const isActive = (activeSubtypeFilter !== 'all' && normKey(activeSubtypeFilter) === normKey(s));
+        html += `<button class="btn ${isActive?'active':''}" data-subtype="${s.replace(/"/g,'&quot;')}">${s}</button>`;
+      }
+      box.innerHTML = html;
+
+      box.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeSubtypeFilter = btn.dataset.subtype || 'all';
+          box.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderItemsList();
+        });
+      });
+    }
+
+    // ======== FILTERING + RENDER LIST ========
     function filterItemsByActiveCategory(){
       const cat = activeCategory;
 
@@ -829,20 +934,30 @@
       const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
       const listEl = document.getElementById('itemsList');
 
-      // base items (category + search)
       const baseItems = filterItemsByActiveCategory().filter(it => {
-        if (!q) return true;
-        const en = (it.name_en || '').toLowerCase();
-        const ru = (it.name_ru || '').toLowerCase();
-        return en.includes(q) || ru.includes(q);
+        // search
+        if (q){
+          const en = (it.name_en || '').toLowerCase();
+          const ru = (it.name_ru || '').toLowerCase();
+          if (!en.includes(q) && !ru.includes(q)) return false;
+        }
+
+        // subtype filter (weapon/armor/jewelry only)
+        if ((activeCategory === 'weapon' || activeCategory === 'armor' || activeCategory === 'jewelry') && activeSubtypeFilter !== 'all'){
+          const st = normKey(it.subtype || '');
+          const want = normKey(activeSubtypeFilter || '');
+          if (!st || st !== want) return false;
+        }
+
+        return true;
       });
 
-      // counts for tier buttons (based on search, before tier filter)
+      // tier counts should reflect search+subtype (before tier filter)
       if (activeCategory === 'weapon'){
         updateTierCounts(baseItems);
       }
 
-      // apply tier filter (only weapons)
+      // apply tier filter for weapons
       const items = baseItems.filter(it => {
         if (activeCategory === 'weapon' && activeTierFilter !== 'all'){
           const tier = String(it.tier || '').trim().toUpperCase();
@@ -851,7 +966,6 @@
         return true;
       });
 
-      // sort (tier + name for weapons, name for others)
       items.sort(itemSort);
 
       document.getElementById('statusLine').textContent =
@@ -880,6 +994,7 @@
       });
     }
 
+    // ======== DETAILS RENDER ========
     function renderTreeView(){
       const treeEl = document.getElementById('treeView');
       treeEl.innerHTML = '';
@@ -1136,6 +1251,15 @@
         }
       }
 
+      // subtype subtabs
+      if (tab === 'weapon' || tab === 'armor' || tab === 'jewelry'){
+        const list = SUBTABS[tab] || [];
+        const ok = (activeSubtypeFilter === 'all') || list.some(x => normKey(x) === normKey(activeSubtypeFilter));
+        if (!ok) activeSubtypeFilter = 'all';
+      } else {
+        activeSubtypeFilter = 'all';
+      }
+
       showList();
 
       try{
@@ -1147,6 +1271,8 @@
         } else {
           await loadCategoryData(tab);
         }
+
+        renderSubtypeFilter();
         renderItemsList();
       } catch (e){
         console.error(e);
