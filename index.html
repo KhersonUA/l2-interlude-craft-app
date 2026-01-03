@@ -308,17 +308,38 @@
   </div>
 
   <script>
-    const ITEMS_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv';
-    const RECIPES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv';
+    // ======== DATA SOURCES (your new split sheets) ========
+    const URLS = {
+      weapon: {
+        items:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=0&single=true&output=csv',
+        recipes: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1962635748&single=true&output=csv'
+      },
+      armor: {
+        items:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=1627511129&single=true&output=csv',
+        recipes: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=523225506&single=true&output=csv'
+      },
+      jewelry: {
+        items:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=923026496&single=true&output=csv',
+        recipes: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3_T3hm32yUCZjgm4LQekdl1hdR14IANDhfQXcw6lIJRDghavbJUFj4rYacRryxZJkSip0p54HWram/pub?gid=2033866316&single=true&output=csv'
+      }
+    };
 
+    // ======== RUNTIME DATA (current active view) ========
     let ITEMS = [];
     let RECIPES = [];
     const itemsById = new Map();
     const recipeByItemId = new Map();
 
+    // cache per category
+    const CACHE = {
+      items: new Map(),   // weapon|armor|jewelry -> items[]
+      recipes: new Map(), // weapon|armor|jewelry -> recipes[]
+      allItems: null,     // merged all items (weap+armor+jew)
+      allRecipes: null    // merged all recipes
+    };
+
     // tabs: weapon | armor | jewelry | materials
     let activeCategory = 'weapon';
-
     let currentItemId = null;
 
     // modes: tree | total | base | direct
@@ -467,6 +488,26 @@
       });
     }
 
+    function normalizeItems(items){
+      items.forEach(it => {
+        it.id = String(it.id || '').trim();
+        it.category = String(it.category || '').trim().toLowerCase();
+        it.craftable = String(it.craftable || '').trim();
+        it.icon = String(it.icon || '').trim();
+        it.name_en = String(it.name_en || '').trim();
+        it.name_ru = String(it.name_ru || '').trim();
+      });
+      return items.filter(it => it.id);
+    }
+    function normalizeRecipes(recipes){
+      recipes.forEach(r => {
+        r.item_id = String(r.item_id || '').trim();
+        r.component_id = String(r.component_id || '').trim();
+        r.qty = String(r.qty || '').trim();
+      });
+      return recipes.filter(r => r.item_id && r.component_id);
+    }
+
     function loadUserData(){
       try{ HAVE = JSON.parse(localStorage.getItem(LS_HAVE) || '{}') || {}; } catch { HAVE = {}; }
       try{ PRICE = JSON.parse(localStorage.getItem(LS_PRICE) || '{}') || {}; } catch { PRICE = {}; }
@@ -555,6 +596,80 @@
       return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
 
+    // ======== LOADERS (tab-based) ========
+    async function loadCategoryData(cat){
+      const status = document.getElementById('statusLine');
+      status.textContent = tr('loading');
+
+      if (CACHE.items.has(cat) && CACHE.recipes.has(cat)){
+        ITEMS = CACHE.items.get(cat);
+        RECIPES = CACHE.recipes.get(cat);
+        rebuildIndexes();
+        return;
+      }
+
+      const src = URLS[cat];
+      if (!src) throw new Error('Unknown category: ' + cat);
+
+      const [itemsRaw, recipesRaw] = await Promise.all([
+        loadCSV(src.items),
+        loadCSV(src.recipes)
+      ]);
+
+      const items = normalizeItems(itemsRaw);
+      const recipes = normalizeRecipes(recipesRaw);
+
+      CACHE.items.set(cat, items);
+      CACHE.recipes.set(cat, recipes);
+
+      ITEMS = items;
+      RECIPES = recipes;
+      rebuildIndexes();
+    }
+
+    async function loadAllMergedData(){
+      if (CACHE.allItems && CACHE.allRecipes) return;
+
+      const cats = ['weapon','armor','jewelry'];
+      const loads = await Promise.all(cats.map(async (c) => {
+        const [itemsRaw, recipesRaw] = await Promise.all([
+          loadCSV(URLS[c].items),
+          loadCSV(URLS[c].recipes)
+        ]);
+        return {
+          cat: c,
+          items: normalizeItems(itemsRaw),
+          recipes: normalizeRecipes(recipesRaw)
+        };
+      }));
+
+      // Merge items by id (prefer first occurrence, but keep stable)
+      const itemsMap = new Map();
+      for (const block of loads){
+        for (const it of block.items){
+          if (!it.id) continue;
+          if (!itemsMap.has(it.id)) itemsMap.set(it.id, it);
+        }
+      }
+
+      // Merge recipes; allow duplicates but we can de-dup by item_id+component_id+qty
+      const recKey = (r)=>`${r.item_id}::${r.component_id}::${Number(r.qty||0)}`;
+      const recSet = new Set();
+      const allRecipes = [];
+      for (const block of loads){
+        for (const r of block.recipes){
+          const k = recKey(r);
+          if (recSet.has(k)) continue;
+          recSet.add(k);
+          allRecipes.push(r);
+        }
+      }
+
+      CACHE.allItems = Array.from(itemsMap.values());
+      CACHE.allRecipes = allRecipes;
+    }
+
+    // ======== CALCULATION ========
     function computeTotalsRecursive(itemId, neededQty, totalsMap){
       const it = itemsById.get(String(itemId));
       const qty = Number(neededQty || 0);
@@ -586,6 +701,7 @@
       const cat = activeCategory;
 
       if (cat === 'materials'){
+        // Materials tab uses merged data
         // ONLY materials that are craftable
         return ITEMS.filter(it =>
           String(it.category || '').toLowerCase() === 'material' &&
@@ -875,7 +991,7 @@
       refreshCurrentDetails();
     }
 
-    function setActiveTab(tab){
+    async function setActiveTab(tab){
       activeCategory = tab;
 
       document.getElementById('tabWeapons').classList.toggle('active', tab === 'weapon');
@@ -884,7 +1000,23 @@
       document.getElementById('tabMaterials').classList.toggle('active', tab === 'materials');
 
       showList();
-      renderItemsList();
+
+      try{
+        if (tab === 'materials'){
+          // Materials uses merged dataset
+          await loadAllMergedData();
+          ITEMS = CACHE.allItems || [];
+          RECIPES = CACHE.allRecipes || [];
+          rebuildIndexes();
+        } else {
+          await loadCategoryData(tab);
+        }
+        renderItemsList();
+      } catch (e){
+        console.error(e);
+        document.getElementById('statusLine').textContent = 'Error loading tab data. Check console.';
+        document.getElementById('itemsList').innerHTML = '';
+      }
     }
 
     function bindEvents(){
@@ -955,28 +1087,7 @@
       status.textContent = tr('loading');
 
       try{
-        ITEMS = await loadCSV(ITEMS_URL);
-        RECIPES = await loadCSV(RECIPES_URL);
-
-        ITEMS.forEach(it => {
-          it.id = String(it.id || '').trim();
-          it.category = String(it.category || '').trim().toLowerCase();
-          it.craftable = String(it.craftable || '').trim();
-          it.icon = String(it.icon || '').trim();
-          it.name_en = String(it.name_en || '').trim();
-          it.name_ru = String(it.name_ru || '').trim();
-        });
-
-        RECIPES.forEach(r => {
-          r.item_id = String(r.item_id || '').trim();
-          r.component_id = String(r.component_id || '').trim();
-          r.qty = String(r.qty || '').trim();
-        });
-
-        rebuildIndexes();
-
-        // default tab on load (as before)
-        setActiveTab('weapon');
+        await setActiveTab('weapon');
       } catch (e){
         console.error(e);
         status.textContent = 'Error loading data. Check console.';
